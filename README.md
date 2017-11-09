@@ -24,6 +24,8 @@ Basic Auth | Check this to specify Access Keys.
 Basic Auth Details | Specify created Access Keys.
 Keep Cookies | To bypass Sumo Logic cookie to SumoLogic, please set "JSESSIONID,AWSELB"
 
+![](https://raw.githubusercontent.com/mtanda/grafana-sumologic-datasource/master/dist/images/config.png)
+
 #### Limitation
 - This plugin only work with proxy mode. (Sumo Logic API doesn't support CORS)
 - This plugin doesn't support [Metrics API](https://help.sumologic.com/APIs/Metrics-API/About-Metrics-API).
