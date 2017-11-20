@@ -110,12 +110,22 @@ export class SumologicDatasource {
     if (this.basicAuth || this.withCredentials) {
       options.withCredentials = true;
     }
-    if (this.basicAuth) {
+    let authorized = document.cookie.split('; ').find((c) => { return c.indexOf('AWSELB=') == 0 });
+    if (!authorized && this.basicAuth) {
       options.headers.Authorization = this.basicAuth;
     }
     options.headers['Content-Type'] = 'application/json';
 
-    return this.backendSrv.datasourceRequest(options);
+    return this.backendSrv.datasourceRequest(options).then((response) => {
+      return response;
+    }, (err) => {
+      if (err.status === 401) {
+        delete options.headers.Authorization;
+        return this.backendSrv.datasourceRequest(options);
+      } else {
+        return err;
+      }
+    });
   }
 
   transformDataToTable(data) {
