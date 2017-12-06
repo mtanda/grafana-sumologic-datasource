@@ -26,6 +26,9 @@ Keep Cookies | To bypass Sumo Logic cookie to SumoLogic, please set "JSESSIONID,
 
 ![](https://raw.githubusercontent.com/mtanda/grafana-sumologic-datasource/master/dist/images/config.png)
 
+To use without saving Access Keys in Grafana backend, you need to disable datasource Basic Auth, and Grafana itself Basic Auth in ini file.
+When accessing datasoure proxy, auth dialog is appeared, input Access Keys, you can call API without saving Access Keys.
+
 #### Limitation
 - This plugin only work with proxy mode. (Sumo Logic API doesn't support CORS)
 - This plugin doesn't support [Metrics API](https://help.sumologic.com/APIs/Metrics-API/About-Metrics-API).
