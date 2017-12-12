@@ -28,48 +28,51 @@ export class SumologicDatasource {
       };
       let startTime = new Date();
       return this.doRequest('POST', '/search/jobs', params).then((job) => {
-        if (job.status !== 202) {
-          return this.$q.reject({ message: 'error' });
-        }
-
         let loop = () => {
           return this.doRequest('GET', '/search/jobs/' + job.data.id).then((status) => {
             let now = new Date();
             if (now - startTime > (timeoutSec * 1000)) {
               return this.doRequest('DELETE', '/search/jobs/' + job.data.id).then((result) => {
-                return this.$q.reject({ message: 'timeout' });
+                return Promise.reject({ message: 'timeout' });
               });
             }
 
             if (status.data.state !== 'DONE GATHERING RESULTS') {
-              return new Promise((resolve) => {
-                setTimeout(() => {
-                  loop().then(resolve);
-                }, 1000);
-              });
+              return this.delay(loop, 1000);
             }
 
             if (target.format === 'time_series' || target.format === 'records') {
-              return this.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=10000').then((records) => {
+              let limit = Math.min(10000, status.data.recordCount);
+              return this.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then((records) => {
                 return records;
               });
             } else if (target.format === 'messages') {
-              return this.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=10000').then((messages) => {
+              let limit = Math.min(10000, status.data.messageCount);
+              return this.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + limit).then((messages) => {
                 return messages;
               });
             } else {
-                return this.$q.reject({ message: 'unsupported type' });
+              return Promise.reject({ message: 'unsupported type' });
+            }
+          }).catch((err) => {
+            // need to wait until job is created and registered
+            if (err.data.code === 'searchjob.jobid.invalid') {
+              return this.delay(loop, 1000);
+            } else {
+              return Promise.reject(err);
             }
           });
         };
 
-        return loop().then((result) => {
-          return result;
-        });
+        return this.delay(() => {
+          return loop().then((result) => {
+            return result;
+          });
+        }, 0);
       });
     })
 
-    return this.$q.all(queries).then(responses => {
+    return Promise.all(queries).then(responses => {
       let result = [];
 
       _.each(responses, (response, index) => {
@@ -95,7 +98,7 @@ export class SumologicDatasource {
   }
 
   testDatasource() {
-    return this.$q.when({ status: 'success', message: 'Data source is working', title: 'Success' });
+    return Promise.resolve({ status: 'success', message: 'Data source is working', title: 'Success' });
   }
 
   doRequest(method, path, params) {
@@ -115,7 +118,23 @@ export class SumologicDatasource {
     }
     options.headers['Content-Type'] = 'application/json';
 
-    return this.backendSrv.datasourceRequest(options);
+    return this.backendSrv.datasourceRequest(options).catch((err) => {
+      if (err.data.code === 'rate.limit.exceeded') {
+        return this.delay(() => {
+          return this.backendSrv.datasourceRequest(options);
+        }, 5000);
+      } else {
+        return Promise.reject(err);
+      }
+    });
+  }
+
+  delay(func, wait) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        func().then(resolve, reject);
+      }, wait);
+    });
   }
 
   transformDataToTable(data) {
@@ -139,7 +158,7 @@ export class SumologicDatasource {
     });
 
     // rows
-    _.each(data, (d) => {
+    data.forEach((d) => {
       for (let r of d[type]) {
         let row = [];
         for (let key of fields) {
@@ -161,10 +180,11 @@ export class SumologicDatasource {
     }
 
     metricLabel = this.createMetricLabel(records[0].map, target);
-    _.each(records, (r) => {
-      dps.push([parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)]);
-    });
-    dps = dps.sort((a, b) => {
+    dps = records
+    .map((r) => {
+      return [parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)];
+    })
+    .sort((a, b) => {
       if (a[1] < b[1]) {
         return -1;
       } else if (a[1] > b[1]) {
