@@ -28,10 +28,6 @@ export class SumologicDatasource {
       };
       let startTime = new Date();
       return this.doRequest('POST', '/search/jobs', params).then((job) => {
-        if (job.status !== 202) {
-          return Promise.reject({ message: 'error' });
-        }
-
         let loop = () => {
           return this.doRequest('GET', '/search/jobs/' + job.data.id).then((status) => {
             let now = new Date();
