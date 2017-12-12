@@ -154,7 +154,7 @@ export class SumologicDatasource {
     });
 
     // rows
-    _.each(data, (d) => {
+    data.forEach((d) => {
       for (let r of d[type]) {
         let row = [];
         for (let key of fields) {
@@ -176,10 +176,11 @@ export class SumologicDatasource {
     }
 
     metricLabel = this.createMetricLabel(records[0].map, target);
-    _.each(records, (r) => {
-      dps.push([parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)]);
-    });
-    dps = dps.sort((a, b) => {
+    dps = records
+    .map((r) => {
+      return [parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)];
+    })
+    .sort((a, b) => {
       if (a[1] < b[1]) {
         return -1;
       } else if (a[1] > b[1]) {
