@@ -17,8 +17,6 @@ export class SumologicDatasource {
   }
 
   query(options) {
-    let timeoutSec = 30;
-
     let queries = _.map(options.targets, (target) => {
       let params = {
         query: this.templateSrv.replace(target.query, options.scopedVars),
@@ -26,50 +24,7 @@ export class SumologicDatasource {
         to: String(this.convertTime(options.range.to, true)),
         timeZone: 'Etc/UTC'
       };
-      let startTime = new Date();
-      return this.doRequest('POST', '/search/jobs', params).then((job) => {
-        let loop = () => {
-          return this.doRequest('GET', '/search/jobs/' + job.data.id).then((status) => {
-            let now = new Date();
-            if (now - startTime > (timeoutSec * 1000)) {
-              return this.doRequest('DELETE', '/search/jobs/' + job.data.id).then((result) => {
-                return Promise.reject({ message: 'timeout' });
-              });
-            }
-
-            if (status.data.state !== 'DONE GATHERING RESULTS') {
-              return this.delay(loop, 1000);
-            }
-
-            if (target.format === 'time_series' || target.format === 'records') {
-              let limit = Math.min(10000, status.data.recordCount);
-              return this.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then((records) => {
-                return records;
-              });
-            } else if (target.format === 'messages') {
-              let limit = Math.min(10000, status.data.messageCount);
-              return this.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + limit).then((messages) => {
-                return messages;
-              });
-            } else {
-              return Promise.reject({ message: 'unsupported type' });
-            }
-          }).catch((err) => {
-            // need to wait until job is created and registered
-            if (err.data.code === 'searchjob.jobid.invalid') {
-              return this.delay(loop, 1000);
-            } else {
-              return Promise.reject(err);
-            }
-          });
-        };
-
-        return this.delay(() => {
-          return loop().then((result) => {
-            return result;
-          });
-        }, 0);
-      });
+      return this.logQuery(params, target.format)
     })
 
     return Promise.all(queries).then(responses => {
@@ -99,6 +54,54 @@ export class SumologicDatasource {
 
   testDatasource() {
     return Promise.resolve({ status: 'success', message: 'Data source is working', title: 'Success' });
+  }
+
+  logQuery(params, format) {
+    let timeoutSec = 30;
+    let startTime = new Date();
+    return this.doRequest('POST', '/search/jobs', params).then((job) => {
+      let loop = () => {
+        return this.doRequest('GET', '/search/jobs/' + job.data.id).then((status) => {
+          let now = new Date();
+          if (now - startTime > (timeoutSec * 1000)) {
+            return this.doRequest('DELETE', '/search/jobs/' + job.data.id).then((result) => {
+              return Promise.reject({ message: 'timeout' });
+            });
+          }
+
+          if (status.data.state !== 'DONE GATHERING RESULTS') {
+            return this.delay(loop, 1000);
+          }
+
+          if (format === 'time_series' || format === 'records') {
+            let limit = Math.min(10000, status.data.recordCount);
+            return this.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then((records) => {
+              return records;
+            });
+          } else if (format === 'messages') {
+            let limit = Math.min(10000, status.data.messageCount);
+            return this.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + limit).then((messages) => {
+              return messages;
+            });
+          } else {
+            return Promise.reject({ message: 'unsupported type' });
+          }
+        }).catch((err) => {
+          // need to wait until job is created and registered
+          if (err.data.code === 'searchjob.jobid.invalid') {
+            return this.delay(loop, 1000);
+          } else {
+            return Promise.reject(err);
+          }
+        });
+      };
+
+      return this.delay(() => {
+        return loop().then((result) => {
+          return result;
+        });
+      }, 0);
+    });
   }
 
   doRequest(method, path, params) {
