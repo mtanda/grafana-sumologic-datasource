@@ -52,6 +52,42 @@ export class SumologicDatasource {
     });
   }
 
+  annotationQuery(options) {
+    let annotation = options.annotation;
+    let query = annotation.query || '';
+    let tagKeys = annotation.tagKeys || '';
+    tagKeys = tagKeys.split(',');
+    let titleFormat = annotation.titleFormat || '';
+    let textFormat = annotation.textFormat || '';
+
+    if (!query) { return Promise.resolve([]); }
+
+    let params = {
+      query: this.templateSrv.replace(query),
+      from: String(this.convertTime(options.range.from, false)),
+      to: String(this.convertTime(options.range.to, true)),
+      timeZone: 'Etc/UTC'
+    };
+    return this.logQuery(params, 'messages').then((result) => {
+      let eventList = result.data.messages.map((message) => {
+        let tags = _.chain(message.map)
+          .filter((v, k) => {
+            return _.includes(tagKeys, k);
+          }).value();
+
+        return {
+          annotation: annotation,
+          time: parseInt(message.map['_messagetime'], 10),
+          title: this.renderTemplate(titleFormat, message.map),
+          tags: tags,
+          text: this.renderTemplate(textFormat, message.map)
+        };
+      });
+
+      return eventList;
+    });
+  }
+
   testDatasource() {
     return Promise.resolve({ status: 'success', message: 'Data source is working', title: 'Success' });
   }
