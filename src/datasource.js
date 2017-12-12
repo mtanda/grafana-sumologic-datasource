@@ -68,7 +68,7 @@ export class SumologicDatasource {
           return loop().then((result) => {
             return result;
           });
-        }, 1000);
+        }, 0);
       });
     })
 
