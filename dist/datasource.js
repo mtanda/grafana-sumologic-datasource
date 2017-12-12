@@ -61,8 +61,6 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           value: function query(options) {
             var _this = this;
 
-            var timeoutSec = 30;
-
             var queries = _.map(options.targets, function (target) {
               var params = {
                 query: _this.templateSrv.replace(target.query, options.scopedVars),
@@ -70,50 +68,10 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 to: String(_this.convertTime(options.range.to, true)),
                 timeZone: 'Etc/UTC'
               };
-              var startTime = new Date();
-              return _this.doRequest('POST', '/search/jobs', params).then(function (job) {
-                if (job.status !== 202) {
-                  return _this.$q.reject({ message: 'error' });
-                }
-
-                var loop = function loop() {
-                  return _this.doRequest('GET', '/search/jobs/' + job.data.id).then(function (status) {
-                    var now = new Date();
-                    if (now - startTime > timeoutSec * 1000) {
-                      return _this.doRequest('DELETE', '/search/jobs/' + job.data.id).then(function (result) {
-                        return _this.$q.reject({ message: 'timeout' });
-                      });
-                    }
-
-                    if (status.data.state !== 'DONE GATHERING RESULTS') {
-                      return new Promise(function (resolve) {
-                        setTimeout(function () {
-                          loop().then(resolve);
-                        }, 1000);
-                      });
-                    }
-
-                    if (target.format === 'time_series' || target.format === 'records') {
-                      return _this.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=10000').then(function (records) {
-                        return records;
-                      });
-                    } else if (target.format === 'messages') {
-                      return _this.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=10000').then(function (messages) {
-                        return messages;
-                      });
-                    } else {
-                      return _this.$q.reject({ message: 'unsupported type' });
-                    }
-                  });
-                };
-
-                return loop().then(function (result) {
-                  return result;
-                });
-              });
+              return _this.logQuery(params, target.format);
             });
 
-            return this.$q.all(queries).then(function (responses) {
+            return Promise.all(queries).then(function (responses) {
               var result = [];
 
               _.each(responses, function (response, index) {
@@ -135,13 +93,106 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             });
           }
         }, {
+          key: 'annotationQuery',
+          value: function annotationQuery(options) {
+            var _this2 = this;
+
+            var annotation = options.annotation;
+            var query = annotation.query || '';
+            var tagKeys = annotation.tagKeys || '';
+            tagKeys = tagKeys.split(',');
+            var titleFormat = annotation.titleFormat || '';
+            var textFormat = annotation.textFormat || '';
+
+            if (!query) {
+              return Promise.resolve([]);
+            }
+
+            var params = {
+              query: this.templateSrv.replace(query),
+              from: String(this.convertTime(options.range.from, false)),
+              to: String(this.convertTime(options.range.to, true)),
+              timeZone: 'Etc/UTC'
+            };
+            return this.logQuery(params, 'messages').then(function (result) {
+              var eventList = result.data.messages.map(function (message) {
+                var tags = _.chain(message.map).filter(function (v, k) {
+                  return _.includes(tagKeys, k);
+                }).value();
+
+                return {
+                  annotation: annotation,
+                  time: parseInt(message.map['_messagetime'], 10),
+                  title: _this2.renderTemplate(titleFormat, message.map),
+                  tags: tags,
+                  text: _this2.renderTemplate(textFormat, message.map)
+                };
+              });
+
+              return eventList;
+            });
+          }
+        }, {
           key: 'testDatasource',
           value: function testDatasource() {
-            return this.$q.when({ status: 'success', message: 'Data source is working', title: 'Success' });
+            return Promise.resolve({ status: 'success', message: 'Data source is working', title: 'Success' });
+          }
+        }, {
+          key: 'logQuery',
+          value: function logQuery(params, format) {
+            var _this3 = this;
+
+            var timeoutSec = 30;
+            var startTime = new Date();
+            return this.doRequest('POST', '/search/jobs', params).then(function (job) {
+              var loop = function loop() {
+                return _this3.doRequest('GET', '/search/jobs/' + job.data.id).then(function (status) {
+                  var now = new Date();
+                  if (now - startTime > timeoutSec * 1000) {
+                    return _this3.doRequest('DELETE', '/search/jobs/' + job.data.id).then(function (result) {
+                      return Promise.reject({ message: 'timeout' });
+                    });
+                  }
+
+                  if (status.data.state !== 'DONE GATHERING RESULTS') {
+                    return _this3.delay(loop, 1000);
+                  }
+
+                  if (format === 'time_series' || format === 'records') {
+                    var limit = Math.min(10000, status.data.recordCount);
+                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then(function (records) {
+                      return records;
+                    });
+                  } else if (format === 'messages') {
+                    var _limit = Math.min(10000, status.data.messageCount);
+                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + _limit).then(function (messages) {
+                      return messages;
+                    });
+                  } else {
+                    return Promise.reject({ message: 'unsupported type' });
+                  }
+                }).catch(function (err) {
+                  // need to wait until job is created and registered
+                  if (err.data.code === 'searchjob.jobid.invalid') {
+                    return _this3.delay(loop, 1000);
+                  } else {
+                    return Promise.reject(err);
+                  }
+                });
+              };
+
+              return _this3.delay(function () {
+                return loop().then(function (result) {
+                  return result;
+                });
+              }, 0);
+            });
           }
         }, {
           key: 'doRequest',
           value: function doRequest(method, path, params) {
+            var _this4 = this;
+
             var options = {
               method: method,
               url: this.url + path,
@@ -158,7 +209,24 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             }
             options.headers['Content-Type'] = 'application/json';
 
-            return this.backendSrv.datasourceRequest(options);
+            return this.backendSrv.datasourceRequest(options).catch(function (err) {
+              if (err.data.code === 'rate.limit.exceeded') {
+                return _this4.delay(function () {
+                  return _this4.backendSrv.datasourceRequest(options);
+                }, 5000);
+              } else {
+                return Promise.reject(err);
+              }
+            });
+          }
+        }, {
+          key: 'delay',
+          value: function delay(func, wait) {
+            return new Promise(function (resolve, reject) {
+              setTimeout(function () {
+                func().then(resolve, reject);
+              }, wait);
+            });
           }
         }, {
           key: 'transformDataToTable',
@@ -181,7 +249,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             });
 
             // rows
-            _.each(data, function (d) {
+            data.forEach(function (d) {
               var _iteratorNormalCompletion = true;
               var _didIteratorError = false;
               var _iteratorError = undefined;
@@ -247,10 +315,9 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             }
 
             metricLabel = this.createMetricLabel(records[0].map, target);
-            _.each(records, function (r) {
-              dps.push([parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)]);
-            });
-            dps = dps.sort(function (a, b) {
+            dps = records.map(function (r) {
+              return [parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)];
+            }).sort(function (a, b) {
               if (a[1] < b[1]) {
                 return -1;
               } else if (a[1] > b[1]) {
