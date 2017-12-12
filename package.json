@@ -12,7 +12,7 @@
     "url": "git+https://github.com/mtanda/grafana-sumologic-datasource.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/mtanda/grafana-sumologic-datasource/issues"
   },
