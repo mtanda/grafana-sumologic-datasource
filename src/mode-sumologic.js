@@ -17,7 +17,8 @@ var SumologicHighlightRules = function() {
   );
 
   var builtinFunctions = (
-    'abs|accum|acos|asin|atan|atan2|avg|backshift|cbrt|ceil|concat|cos|cosh|count|count_distinct|count_frequent|diff|exp|expm1|fields|fillmissing|filter|first|last|floor|format|formatDate|lookup|hypot|if|ipv4ToNumber|isNull|isEmpty|isBlank|join|length|limit|log|log10|log1p|luhn|num|number|toLong|pct|merge|max|min|most_recent|least_recent|now|outlier|csv|split|json|keyvalue|kv|xml|parseDate|parseHex|pct_sampling|predict|queryEndTime|queryStartTime|queryTimeRange|replace|rollingstd|round|save|sessionize|sin|sinh|smooth|sort|sqrt|stddev|substring|sum|tan|tanh|timeslice|toDegrees|toLowerCase|toUpperCase|top|toRadians|total|trace|transaction|transpose|urldecode|where|getCIDRPrefix|compareCIDRPrefix|maskFromCIDR'
+    'abs|accum|acos|asin|atan|atan2|avg|backshift|cbrt|ceil|concat|cos|cosh|count|count_distinct|count_frequent|diff|exp|expm1|fields|fillmissing|filter|first|last|floor|format|formatDate|lookup|hypot|if|ipv4ToNumber|isNull|isEmpty|isBlank|join|length|limit|log|log10|log1p|luhn|num|number|toLong|pct|merge|max|min|most_recent|least_recent|now|outlier|csv|split|json|keyvalue|kv|xml|parseDate|parseHex|pct_sampling|predict|queryEndTime|queryStartTime|queryTimeRange|replace|rollingstd|round|save|sessionize|sin|sinh|smooth|sort|sqrt|stddev|substring|sum|tan|tanh|timeslice|toDegrees|toLowerCase|toUpperCase|top|toRadians|total|trace|transaction|transpose|urldecode|where|getCIDRPrefix|compareCIDRPrefix|maskFromCIDR' +
+    'logreduce|details|compare|logcompare'
   );
 
   var keywordMapper = this.createKeywordMapper({
@@ -87,7 +88,8 @@ var sumologicKeyWords = [
   "replace", "rollingstd", "round", "save", "sessionize", "sin", "sinh", "smooth", "sort", "sqrt", "stddev", "substring", "sum",
   "tan", "tanh", "timeslice", "toDegrees", "toLowerCase", "toUpperCase",
   "top", "toRadians", "total", "trace", "transaction", "transpose",
-  "urldecode", "where", "getCIDRPrefix", "compareCIDRPrefix", "maskFromCIDR"
+  "urldecode", "where", "getCIDRPrefix", "compareCIDRPrefix", "maskFromCIDR",
+  "logreduce", "details", "compare", "logcompare"
 ];
 
 var keyWordsCompletions = sumologicKeyWords.map(function(word) {
