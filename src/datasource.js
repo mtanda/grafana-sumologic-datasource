@@ -32,7 +32,7 @@ export class SumologicDatasource {
       let result = [];
 
       _.each(responses, (response, index) => {
-        if (options.targets[index].format === 'time_series') {
+        if (options.targets[index].format === 'time_series_records') {
           result.push(this.transformRecordsToTimeSeries(response.records, options.targets[index]));
         }
       });
@@ -131,7 +131,7 @@ export class SumologicDatasource {
           }
 
 
-          if (format === 'time_series' || format === 'records') {
+          if (format === 'time_series_records' || format === 'records') {
             if (status.data.recordCount === 0) {
               return Promise.resolve([]);
             }

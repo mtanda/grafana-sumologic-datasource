@@ -24,7 +24,7 @@ angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', 
     target.format = target.format || $scope.getDefaultFormat();
 
     this.formats = [
-      { text: 'Time series', value: 'time_series' },
+      { text: 'Time series (Records)', value: 'time_series_records' },
       { text: 'Records', value: 'records' },
       { text: 'Messages', value: 'messages' },
     ];
@@ -38,7 +38,7 @@ angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', 
     if (this.panelType === 'table') {
       return 'records';
     }
-    return 'time_series';
+    return 'time_series_records';
   };
 
   $scope.init();
