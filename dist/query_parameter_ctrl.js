@@ -35,7 +35,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           target.aliasFormat = target.aliasFormat || '';
           target.format = target.format || $scope.getDefaultFormat();
 
-          this.formats = [{ text: 'Time series', value: 'time_series' }, { text: 'Records', value: 'records' }, { text: 'Messages', value: 'messages' }];
+          this.formats = [{ text: 'Time series (Records)', value: 'time_series_records' }, { text: 'Records', value: 'records' }, { text: 'Messages', value: 'messages' }];
 
           if (!$scope.onChange) {
             $scope.onChange = function () {};
@@ -46,7 +46,7 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           if (this.panelType === 'table') {
             return 'records';
           }
-          return 'time_series';
+          return 'time_series_records';
         };
 
         $scope.init();

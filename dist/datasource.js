@@ -76,7 +76,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               var result = [];
 
               _.each(responses, function (response, index) {
-                if (options.targets[index].format === 'time_series') {
+                if (options.targets[index].format === 'time_series_records') {
                   result.push(_this.transformRecordsToTimeSeries(response.records, options.targets[index]));
                 }
               });
@@ -182,7 +182,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                     return _this3.delay(loop, 1000);
                   }
 
-                  if (format === 'time_series' || format === 'records') {
+                  if (format === 'time_series_records' || format === 'records') {
                     if (status.data.recordCount === 0) {
                       return Promise.resolve([]);
                     }
