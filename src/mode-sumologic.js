@@ -8,7 +8,7 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
 var SumologicHighlightRules = function() {
   var keywords = (
-    'as|by|from|in|on|matches|regex|nodrop|with' +
+    'as|by|from|in|matches|nodrop|on|regex|with' +
     '_collector|_index|_source|_sourceCategory|_sourceHost|_sourceName|_view'
   );
 
