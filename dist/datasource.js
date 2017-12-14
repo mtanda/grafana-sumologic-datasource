@@ -43,7 +43,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
       }();
 
       _export('SumologicDatasource', SumologicDatasource = function () {
-        function SumologicDatasource(instanceSettings, $q, backendSrv, templateSrv) {
+        function SumologicDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
           _classCallCheck(this, SumologicDatasource);
 
           this.type = instanceSettings.type;
@@ -54,6 +54,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           this.$q = $q;
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
+          this.timeSrv = timeSrv;
         }
 
         _createClass(SumologicDatasource, [{
@@ -76,14 +77,12 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
               _.each(responses, function (response, index) {
                 if (options.targets[index].format === 'time_series') {
-                  result.push(_this.transformRecordsToTimeSeries(response.data.records, options.targets[index]));
+                  result.push(_this.transformRecordsToTimeSeries(response.records, options.targets[index]));
                 }
               });
 
               var tableResponses = _.filter(responses, function (response, index) {
                 return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-              }).map(function (response) {
-                return response.data;
               }).flatten();
               if (tableResponses.length > 0) {
                 result.push(_this.transformDataToTable(tableResponses));
@@ -91,6 +90,31 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
               return { data: result };
             });
+          }
+        }, {
+          key: 'metricFindQuery',
+          value: function metricFindQuery(query) {
+            var range = this.timeSrv.timeRange();
+
+            var recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
+            if (recordValuesQuery) {
+              var recordKey = recordValuesQuery[1].toLowerCase();
+              var _query = recordValuesQuery[2];
+              var params = {
+                query: this.templateSrv.replace(_query),
+                from: String(this.convertTime(range.from, false)),
+                to: String(this.convertTime(range.to, true)),
+                timeZone: 'Etc/UTC'
+              };
+              return this.logQuery(params, 'records').then(function (result) {
+                return result.records.map(function (r) {
+                  return {
+                    text: r.map[recordKey],
+                    value: r.map[recordKey]
+                  };
+                });
+              });
+            }
           }
         }, {
           key: 'annotationQuery',
@@ -115,7 +139,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               timeZone: 'Etc/UTC'
             };
             return this.logQuery(params, 'messages').then(function (result) {
-              var eventList = result.data.messages.map(function (message) {
+              var eventList = result.messages.map(function (message) {
                 var tags = _.chain(message.map).filter(function (v, k) {
                   return _.includes(tagKeys, k);
                 }).value();
@@ -159,14 +183,20 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                   }
 
                   if (format === 'time_series' || format === 'records') {
+                    if (status.data.recordCount === 0) {
+                      return Promise.resolve([]);
+                    }
                     var limit = Math.min(10000, status.data.recordCount);
-                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then(function (records) {
-                      return records;
+                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then(function (response) {
+                      return response.data;
                     });
                   } else if (format === 'messages') {
+                    if (status.data.messageCount === 0) {
+                      return Promise.resolve([]);
+                    }
                     var _limit = Math.min(10000, status.data.messageCount);
-                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + _limit).then(function (messages) {
-                      return messages;
+                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + _limit).then(function (response) {
+                      return response.data;
                     });
                   } else {
                     return Promise.reject({ message: 'unsupported type' });

@@ -1,6 +1,6 @@
 'use strict';
 
-System.register(['./query_parameter_ctrl', 'lodash', 'app/plugins/sdk'], function (_export, _context) {
+System.register(['./query_parameter_ctrl', 'lodash', 'app/plugins/sdk', './mode-sumologic', './snippets/sumologic'], function (_export, _context) {
   "use strict";
 
   var _, QueryCtrl, SumologicQueryCtrl;
@@ -40,7 +40,7 @@ System.register(['./query_parameter_ctrl', 'lodash', 'app/plugins/sdk'], functio
       _ = _lodash.default;
     }, function (_appPluginsSdk) {
       QueryCtrl = _appPluginsSdk.QueryCtrl;
-    }],
+    }, function (_modeSumologic) {}, function (_snippetsSumologic) {}],
     execute: function () {
       _export('SumologicQueryCtrl', SumologicQueryCtrl = function (_QueryCtrl) {
         _inherits(SumologicQueryCtrl, _QueryCtrl);
