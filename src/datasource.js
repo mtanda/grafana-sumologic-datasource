@@ -116,12 +116,12 @@ export class SumologicDatasource {
   logQuery(params, format) {
     let timeoutSec = 30;
     let startTime = new Date();
-    return this.doRequest('POST', '/search/jobs', params).then((job) => {
+    return this.doRequest('POST', '/v1/search/jobs', params).then((job) => {
       let loop = () => {
-        return this.doRequest('GET', '/search/jobs/' + job.data.id).then((status) => {
+        return this.doRequest('GET', '/v1/search/jobs/' + job.data.id).then((status) => {
           let now = new Date();
           if (now - startTime > (timeoutSec * 1000)) {
-            return this.doRequest('DELETE', '/search/jobs/' + job.data.id).then((result) => {
+            return this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then((result) => {
               return Promise.reject({ message: 'timeout' });
             });
           }
@@ -136,7 +136,7 @@ export class SumologicDatasource {
               return Promise.resolve([]);
             }
             let limit = Math.min(10000, status.data.recordCount);
-            return this.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
+            return this.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
               return response.data;
             });
           } else if (format === 'messages') {
@@ -144,7 +144,7 @@ export class SumologicDatasource {
               return Promise.resolve([]);
             }
             let limit = Math.min(10000, status.data.messageCount);
-            return this.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
+            return this.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
               return response.data;
             });
           } else {
