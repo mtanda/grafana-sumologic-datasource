@@ -21,8 +21,8 @@ export class SumologicDatasource {
     let queries = _.map(options.targets, (target) => {
       let params = {
         query: this.templateSrv.replace(target.query, options.scopedVars),
-        from: String(this.convertTime(options.range.from, false)),
-        to: String(this.convertTime(options.range.to, true)),
+        from: this.convertTime(options.range.from, false),
+        to: this.convertTime(options.range.to, true),
         timeZone: 'Etc/UTC'
       };
       return this.logQuery(params, target.format)
