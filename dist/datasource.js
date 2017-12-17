@@ -168,12 +168,12 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
             var timeoutSec = 30;
             var startTime = new Date();
-            return this.doRequest('POST', '/search/jobs', params).then(function (job) {
+            return this.doRequest('POST', '/v1/search/jobs', params).then(function (job) {
               var loop = function loop() {
-                return _this3.doRequest('GET', '/search/jobs/' + job.data.id).then(function (status) {
+                return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id).then(function (status) {
                   var now = new Date();
                   if (now - startTime > timeoutSec * 1000) {
-                    return _this3.doRequest('DELETE', '/search/jobs/' + job.data.id).then(function (result) {
+                    return _this3.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then(function (result) {
                       return Promise.reject({ message: 'timeout' });
                     });
                   }
@@ -187,7 +187,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                       return Promise.resolve([]);
                     }
                     var limit = Math.min(10000, status.data.recordCount);
-                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then(function (response) {
+                    return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then(function (response) {
                       return response.data;
                     });
                   } else if (format === 'messages') {
@@ -195,7 +195,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                       return Promise.resolve([]);
                     }
                     var _limit = Math.min(10000, status.data.messageCount);
-                    return _this3.doRequest('GET', '/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + _limit).then(function (response) {
+                    return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + _limit).then(function (response) {
                       return response.data;
                     });
                   } else {
