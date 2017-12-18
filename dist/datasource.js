@@ -65,8 +65,8 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             var queries = _.map(options.targets, function (target) {
               var params = {
                 query: _this.templateSrv.replace(target.query, options.scopedVars),
-                from: String(_this.convertTime(options.range.from, false)),
-                to: String(_this.convertTime(options.range.to, true)),
+                from: _this.convertTime(options.range.from, false),
+                to: _this.convertTime(options.range.to, true),
                 timeZone: 'Etc/UTC'
               };
               return _this.logQuery(params, target.format);
@@ -159,7 +159,15 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         }, {
           key: 'testDatasource',
           value: function testDatasource() {
-            return Promise.resolve({ status: 'success', message: 'Data source is working', title: 'Success' });
+            var params = {
+              query: '| count _sourceCategory',
+              from: new Date().getTime() - 10 * 60 * 1000,
+              to: new Date().getTime(),
+              timeZone: 'Etc/UTC'
+            };
+            return this.logQuery(params, 'records').then(function (response) {
+              return { status: 'success', message: 'Data source is working', title: 'Success' };
+            });
           }
         }, {
           key: 'logQuery',
