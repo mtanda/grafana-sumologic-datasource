@@ -110,7 +110,15 @@ export class SumologicDatasource {
   }
 
   testDatasource() {
-    return Promise.resolve({ status: 'success', message: 'Data source is working', title: 'Success' });
+    let params = {
+      query: '| count _sourceCategory',
+      from: (new Date()).getTime() - 10 * 60 * 1000,
+      to: (new Date()).getTime(),
+      timeZone: 'Etc/UTC'
+    };
+    return this.logQuery(params, 'records').then((response) => {
+      return { status: 'success', message: 'Data source is working', title: 'Success' };
+    });
   }
 
   logQuery(params, format) {
