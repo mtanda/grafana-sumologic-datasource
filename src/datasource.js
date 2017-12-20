@@ -33,7 +33,7 @@ export class SumologicDatasource {
 
       _.each(responses, (response, index) => {
         if (options.targets[index].format === 'time_series_records') {
-          result.push(this.transformRecordsToTimeSeries(response, options.targets[index]));
+          result = result.concat(this.transformRecordsToTimeSeries(response, options.targets[index]));
         }
       });
 
@@ -263,22 +263,24 @@ export class SumologicDatasource {
       return f.fieldType != 'string' && !f.keyField;
     }).name;
 
-    metricLabel = this.createMetricLabel(records[0].map, target);
-    dps = records
-      .map((r) => {
-        return [parseFloat(r.map[valueField]), parseInt(r.map[keyField], 10)];
-      })
-      .sort((a, b) => {
-        if (a[1] < b[1]) {
-          return -1;
-        } else if (a[1] > b[1]) {
-          return 1;
-        } else {
-          return 0;
-        }
-      })
+    let result = {};
+    records.sort((a, b) => {
+      if (a.map[keyField] < b.map[keyField]) {
+        return -1;
+      } else if (a.map[keyField] > b.map[keyField]) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }).forEach((r) => {
+      metricLabel = this.createMetricLabel(r.map, target);
+      result[metricLabel] = result[metricLabel] || [];
+      result[metricLabel].push([r.map[valueField], r.map[keyField]]);
+    });
 
-    return { target: metricLabel, datapoints: dps };
+    return _.map(result, (v, k) => {
+     return { target: k, datapoints: v };
+    });
   }
 
   createMetricLabel(record, target) {
