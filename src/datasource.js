@@ -257,10 +257,10 @@ export class SumologicDatasource {
     }
 
     let keyField = fields.find((f) => {
-      return f.keyField;
+      return f.fieldType != 'string' && f.keyField;
     }).name;
     let valueField = fields.find((f) => {
-      return !f.keyField;
+      return f.fieldType != 'string' && !f.keyField;
     }).name;
 
     metricLabel = this.createMetricLabel(records[0].map, target);
