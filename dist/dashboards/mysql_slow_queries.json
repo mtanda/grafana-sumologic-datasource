@@ -89,6 +89,8 @@
       "interval": null,
       "legend": {
         "show": true,
+        "sort": "current",
+        "sortDesc": true,
         "values": true
       },
       "legendType": "Under graph",
@@ -131,6 +133,8 @@
       "interval": null,
       "legend": {
         "show": true,
+        "sort": "current",
+        "sortDesc": true,
         "values": true
       },
       "legendType": "Under graph",
@@ -173,6 +177,8 @@
       "interval": null,
       "legend": {
         "show": true,
+        "sort": "current",
+        "sortDesc": true,
         "values": true
       },
       "legendType": "Under graph",
@@ -215,6 +221,8 @@
       "interval": null,
       "legend": {
         "show": true,
+        "sort": "current",
+        "sortDesc": true,
         "values": true
       },
       "legendType": "Under graph",
@@ -339,6 +347,7 @@
         "current": false,
         "max": false,
         "min": false,
+        "rightSide": true,
         "show": true,
         "total": false,
         "values": false
@@ -503,7 +512,7 @@
         "current": false,
         "max": false,
         "min": false,
-        "show": true,
+        "show": false,
         "total": false,
         "values": false
       },
