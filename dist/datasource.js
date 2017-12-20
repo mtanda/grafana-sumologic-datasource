@@ -77,7 +77,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
               _.each(responses, function (response, index) {
                 if (options.targets[index].format === 'time_series_records') {
-                  result.push(_this.transformRecordsToTimeSeries(response.records, options.targets[index]));
+                  result = result.concat(_this.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf()));
                 }
               });
 
@@ -344,28 +344,51 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           }
         }, {
           key: 'transformRecordsToTimeSeries',
-          value: function transformRecordsToTimeSeries(records, target) {
+          value: function transformRecordsToTimeSeries(response, target, defaultValue) {
+            var _this5 = this;
+
             var metricLabel = '';
             var dps = [];
+            var fields = response.fields;
+            var records = response.records;
 
             if (records.length === 0) {
               return { target: metricLabel, datapoints: dps };
             }
 
-            metricLabel = this.createMetricLabel(records[0].map, target);
-            dps = records.map(function (r) {
-              return [parseFloat(r.map['_count']), parseInt(r.map['_timeslice'], 10)];
-            }).sort(function (a, b) {
-              if (a[1] < b[1]) {
+            var keyField = fields.find(function (f) {
+              return f.fieldType != 'string' && f.keyField;
+            });
+            keyField = keyField ? keyField.name : '';
+            var valueField = fields.find(function (f) {
+              return f.fieldType != 'string' && !f.keyField;
+            });
+            if (!valueField) {
+              return { target: metricLabel, datapoints: dps };
+            }
+            valueField = valueField.name;
+
+            var result = {};
+            records.sort(function (a, b) {
+              if (keyField === '') {
+                return 0;
+              }
+              if (a.map[keyField] < b.map[keyField]) {
                 return -1;
-              } else if (a[1] > b[1]) {
+              } else if (a.map[keyField] > b.map[keyField]) {
                 return 1;
               } else {
                 return 0;
               }
+            }).forEach(function (r) {
+              metricLabel = _this5.createMetricLabel(r.map, target);
+              result[metricLabel] = result[metricLabel] || [];
+              result[metricLabel].push([parseFloat(r.map[valueField]), parseFloat(r.map[keyField] || defaultValue)]);
             });
 
-            return { target: metricLabel, datapoints: dps };
+            return _.map(result, function (v, k) {
+              return { target: k, datapoints: v };
+            });
           }
         }, {
           key: 'createMetricLabel',
