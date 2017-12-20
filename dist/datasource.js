@@ -64,7 +64,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
             var queries = _.map(options.targets, function (target) {
               var params = {
-                query: _this.templateSrv.replace(target.query, options.scopedVars),
+                query: _this.templateSrv.replace(_this.stripComment(target.query), options.scopedVars),
                 from: _this.convertTime(options.range.from, false),
                 to: _this.convertTime(options.range.to, true),
                 timeZone: 'Etc/UTC'
@@ -101,7 +101,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               var recordKey = recordValuesQuery[1].toLowerCase();
               var _query = recordValuesQuery[2];
               var params = {
-                query: this.templateSrv.replace(_query),
+                query: this.templateSrv.replace(this.stripComment(_query)),
                 from: String(this.convertTime(range.from, false)),
                 to: String(this.convertTime(range.to, true)),
                 timeZone: 'Etc/UTC'
@@ -133,7 +133,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             }
 
             var params = {
-              query: this.templateSrv.replace(query),
+              query: this.templateSrv.replace(this.stripComment(query)),
               from: String(this.convertTime(options.range.from, false)),
               to: String(this.convertTime(options.range.to, true)),
               timeZone: 'Etc/UTC'
@@ -386,6 +386,15 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               }
               return g1;
             });
+          }
+        }, {
+          key: 'stripComment',
+          value: function stripComment(query) {
+            return query.split("\n").map(function (q) {
+              return q.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');
+            }).filter(function (q) {
+              return q !== "";
+            }).join("\n");
           }
         }, {
           key: 'convertTime',
