@@ -33,7 +33,7 @@ export class SumologicDatasource {
 
       _.each(responses, (response, index) => {
         if (options.targets[index].format === 'time_series_records') {
-          result = result.concat(this.transformRecordsToTimeSeries(response, options.targets[index]));
+          result = result.concat(this.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf()));
         }
       });
 
@@ -246,7 +246,7 @@ export class SumologicDatasource {
     return table;
   }
 
-  transformRecordsToTimeSeries(response, target) {
+  transformRecordsToTimeSeries(response, target, defaultValue) {
     let metricLabel = '';
     let dps = [];
     let fields = response.fields;
@@ -258,13 +258,21 @@ export class SumologicDatasource {
 
     let keyField = fields.find((f) => {
       return f.fieldType != 'string' && f.keyField;
-    }).name;
+    });
+    keyField = keyField ? keyField.name : '';
     let valueField = fields.find((f) => {
       return f.fieldType != 'string' && !f.keyField;
-    }).name;
+    });
+    if (!valueField) {
+      return { target: metricLabel, datapoints: dps };
+    }
+    valueField = valueField.name;
 
     let result = {};
     records.sort((a, b) => {
+      if (keyField === '') {
+        return 0;
+      }
       if (a.map[keyField] < b.map[keyField]) {
         return -1;
       } else if (a.map[keyField] > b.map[keyField]) {
@@ -275,7 +283,7 @@ export class SumologicDatasource {
     }).forEach((r) => {
       metricLabel = this.createMetricLabel(r.map, target);
       result[metricLabel] = result[metricLabel] || [];
-      result[metricLabel].push([r.map[valueField], r.map[keyField]]);
+      result[metricLabel].push([parseFloat(r.map[valueField]), parseFloat(r.map[keyField] || defaultValue)]);
     });
 
     return _.map(result, (v, k) => {
