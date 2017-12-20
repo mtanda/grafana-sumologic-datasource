@@ -20,7 +20,7 @@ export class SumologicDatasource {
   query(options) {
     let queries = _.map(options.targets, (target) => {
       let params = {
-        query: this.templateSrv.replace(target.query, options.scopedVars),
+        query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
         from: this.convertTime(options.range.from, false),
         to: this.convertTime(options.range.to, true),
         timeZone: 'Etc/UTC'
@@ -57,7 +57,7 @@ export class SumologicDatasource {
       let recordKey = recordValuesQuery[1].toLowerCase();
       let query = recordValuesQuery[2];
       let params = {
-        query: this.templateSrv.replace(query),
+        query: this.templateSrv.replace(this.stripComment(query)),
         from: String(this.convertTime(range.from, false)),
         to: String(this.convertTime(range.to, true)),
         timeZone: 'Etc/UTC'
@@ -84,7 +84,7 @@ export class SumologicDatasource {
     if (!query) { return Promise.resolve([]); }
 
     let params = {
-      query: this.templateSrv.replace(query),
+      query: this.templateSrv.replace(this.stripComment(query)),
       from: String(this.convertTime(options.range.from, false)),
       to: String(this.convertTime(options.range.to, true)),
       timeZone: 'Etc/UTC'
@@ -288,6 +288,14 @@ export class SumologicDatasource {
       }
       return g1;
     });
+  }
+
+  stripComment(query) {
+    return query.split("\n").map(q => {
+      return q.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');
+    }).filter(q => {
+      return q !== "";
+    }).join("\n");
   }
 
   convertTime(date, roundUp) {
