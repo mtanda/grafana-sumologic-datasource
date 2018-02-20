@@ -6,6 +6,24 @@ This plugin use Grafana unreleased feature.
 To use this Feature, you need to build Grafana yourself, or wait for 4.7 release.
 https://github.com/grafana/grafana/pull/9578
 
+### Install the plugin
+To install the beta version, copy the `dist` directory of this repository to the plugin directory of your Grafana installation, then restart Grafana. Environment-specific instructions follow.
+
+
+#### Install on Mac
+
+To install the plugin on a Mac, with Grafana installed using Homebrew:
+
+`cp -r dist /usr/local/var/lib/grafana/plugins/grafana-sumologic-datasource && brew services restart grafana`
+
+#### Install on Ubuntu Linux
+
+To install the plugin on Ubuntu Linux:
+
+`sudo cp -r dist /path_to_plugins/grafana-sumologic-datasource && sudo /bin/systemctl restart grafana-server`
+
+Where `path_to_plugins`  is the path to the plugins folder in your Grafana environment. The plugins folder is typically `/var/lib/grafana/`, but it may be different in your environment. 
+
 ### Setup
 This plugin use [Search Job API](https://help.sumologic.com/APIs/Search-Job-API).
 
