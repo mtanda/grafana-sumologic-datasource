@@ -40,7 +40,7 @@ URL | Specify the API Endpoint for your environment. (See also this [doc](https:
 Access | Specify "proxy".
 Basic Auth | Check this to specify Access Keys.
 Basic Auth Details | Specify created Access Keys.
-Keep Cookies | To bypass Sumo Logic cookie to SumoLogic, please set "JSESSIONID,AWSELB"
+Whitelisted Cookies (Keep Cookies) | To bypass Sumo Logic cookie to SumoLogic, please set "JSESSIONID,AWSELB"
 
 ![](https://raw.githubusercontent.com/mtanda/grafana-sumologic-datasource/master/dist/images/config.png)
 
