@@ -18,15 +18,19 @@ export class SumologicDatasource {
   }
 
   query(options) {
-    let queries = _.map(options.targets, (target) => {
-      let params = {
-        query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
-        from: this.convertTime(options.range.from, false),
-        to: this.convertTime(options.range.to, true),
-        timeZone: 'Etc/UTC'
-      };
-      return this.logQuery(params, target.format)
-    })
+    let queries = _.chain(options.targets)
+      .filter((target) => {
+        return !target.hide;
+      })
+      .map((target) => {
+        let params = {
+          query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
+          from: this.convertTime(options.range.from, false),
+          to: this.convertTime(options.range.to, true),
+          timeZone: 'Etc/UTC'
+        };
+        return this.logQuery(params, target.format)
+      }).value();
 
     return Promise.all(queries).then(responses => {
       let result = [];
