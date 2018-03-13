@@ -1,11 +1,6 @@
 ## Sumo Logic Datasource Plugin for Grafana
 This plugin provide time series / table data from Sumo Logic.
 
-### Notice
-This plugin use Grafana unreleased feature.
-To use this Feature, you need to build Grafana yourself, or wait for 4.7 release.
-https://github.com/grafana/grafana/pull/9578
-
 ### Install the plugin
 To install the beta version, copy the `dist` directory of this repository to the plugin directory of your Grafana installation, then restart Grafana. Environment-specific instructions follow.
 
