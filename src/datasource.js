@@ -142,6 +142,9 @@ export class SumologicDatasource {
             return this.delay(loop, 1000);
           }
 
+          if (status.data.pendingErrors.length !== 0 || status.data.pendingWarnings.length !== 0) {
+            return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
+          }
 
           if (format === 'time_series_records' || format === 'records') {
             if (status.data.recordCount === 0) {
@@ -164,7 +167,7 @@ export class SumologicDatasource {
           }
         }).catch((err) => {
           // need to wait until job is created and registered
-          if (err.data.code === 'searchjob.jobid.invalid') {
+          if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
             return this.delay(loop, 1000);
           } else {
             return Promise.reject(err);
