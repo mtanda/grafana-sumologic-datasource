@@ -11,6 +11,7 @@ export class SumologicDatasource {
     this.url = instanceSettings.url;
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
+    this.timeoutSec = instanceSettings.jsonData.timeout || 30;
     this.$q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
@@ -126,13 +127,12 @@ export class SumologicDatasource {
   }
 
   logQuery(params, format) {
-    let timeoutSec = 30;
     let startTime = new Date();
     return this.doRequest('POST', '/v1/search/jobs', params).then((job) => {
       let loop = () => {
         return this.doRequest('GET', '/v1/search/jobs/' + job.data.id).then((status) => {
           let now = new Date();
-          if (now - startTime > (timeoutSec * 1000)) {
+          if (now - startTime > (this.timeoutSec * 1000)) {
             return this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then((result) => {
               return Promise.reject({ message: 'timeout' });
             });
@@ -294,7 +294,7 @@ export class SumologicDatasource {
     });
 
     return _.map(result, (v, k) => {
-     return { target: k, datapoints: v };
+      return { target: k, datapoints: v };
     });
   }
 
