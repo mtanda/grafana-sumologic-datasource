@@ -64,7 +64,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             var _this = this;
 
             var queries = _.chain(options.targets).filter(function (target) {
-              return !target.hide;
+              return !target.hide && target.query;
             }).map(function (target) {
               var params = {
                 query: _this.templateSrv.replace(_this.stripComment(target.query), options.scopedVars),

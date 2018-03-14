@@ -33,9 +33,11 @@ System.register(['angular', 'lodash'], function (_export, _context) {
           var target = $scope.target;
           target.query = target.query || '';
           target.aliasFormat = target.aliasFormat || '';
-          target.format = target.format || $scope.getDefaultFormat();
 
           this.formats = [{ text: 'Time series (Records)', value: 'time_series_records' }, { text: 'Records', value: 'records' }, { text: 'Messages', value: 'messages' }];
+          if (!_.includes(_.map(this.formats, 'value'), target.format)) {
+            target.format = $scope.getDefaultFormat();
+          }
 
           if (!$scope.onChange) {
             $scope.onChange = function () {};
