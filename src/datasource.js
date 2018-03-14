@@ -21,7 +21,7 @@ export class SumologicDatasource {
   query(options) {
     let queries = _.chain(options.targets)
       .filter((target) => {
-        return !target.hide;
+        return !target.hide && target.query;
       })
       .map((target) => {
         let params = {
