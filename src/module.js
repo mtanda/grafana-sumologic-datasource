@@ -1,9 +1,7 @@
 import {SumologicDatasource} from './datasource';
 import {SumologicQueryCtrl} from './query_ctrl';
 import {SumologicAnnotationsQueryCtrl} from './annotations_query_ctrl';
-
-class SumologicConfigCtrl {}
-SumologicConfigCtrl.templateUrl = 'partials/config.html';
+import {SumologicConfigCtrl} from './config_ctrl';
 
 export {
   SumologicDatasource as Datasource,

@@ -11,6 +11,7 @@ export class SumologicDatasource {
     this.url = instanceSettings.url;
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
+    this.timeoutSec = instanceSettings.jsonData.timeout || 30;
     this.$q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
@@ -18,15 +19,19 @@ export class SumologicDatasource {
   }
 
   query(options) {
-    let queries = _.map(options.targets, (target) => {
-      let params = {
-        query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
-        from: this.convertTime(options.range.from, false),
-        to: this.convertTime(options.range.to, true),
-        timeZone: 'Etc/UTC'
-      };
-      return this.logQuery(params, target.format)
-    })
+    let queries = _.chain(options.targets)
+      .filter((target) => {
+        return !target.hide;
+      })
+      .map((target) => {
+        let params = {
+          query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
+          from: this.convertTime(options.range.from, false),
+          to: this.convertTime(options.range.to, true),
+          timeZone: 'Etc/UTC'
+        };
+        return this.logQuery(params, target.format)
+      }).value();
 
     return Promise.all(queries).then(responses => {
       let result = [];
@@ -122,13 +127,12 @@ export class SumologicDatasource {
   }
 
   logQuery(params, format) {
-    let timeoutSec = 30;
     let startTime = new Date();
     return this.doRequest('POST', '/v1/search/jobs', params).then((job) => {
       let loop = () => {
         return this.doRequest('GET', '/v1/search/jobs/' + job.data.id).then((status) => {
           let now = new Date();
-          if (now - startTime > (timeoutSec * 1000)) {
+          if (now - startTime > (this.timeoutSec * 1000)) {
             return this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then((result) => {
               return Promise.reject({ message: 'timeout' });
             });
@@ -138,6 +142,9 @@ export class SumologicDatasource {
             return this.delay(loop, 1000);
           }
 
+          if (status.data.pendingErrors.length !== 0 || status.data.pendingWarnings.length !== 0) {
+            return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
+          }
 
           if (format === 'time_series_records' || format === 'records') {
             if (status.data.recordCount === 0) {
@@ -160,7 +167,7 @@ export class SumologicDatasource {
           }
         }).catch((err) => {
           // need to wait until job is created and registered
-          if (err.data.code === 'searchjob.jobid.invalid') {
+          if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
             return this.delay(loop, 1000);
           } else {
             return Promise.reject(err);
@@ -287,7 +294,7 @@ export class SumologicDatasource {
     });
 
     return _.map(result, (v, k) => {
-     return { target: k, datapoints: v };
+      return { target: k, datapoints: v };
     });
   }
 
