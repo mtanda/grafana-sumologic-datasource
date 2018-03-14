@@ -51,6 +51,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           this.url = instanceSettings.url;
           this.basicAuth = instanceSettings.basicAuth;
           this.withCredentials = instanceSettings.withCredentials;
+          this.timeoutSec = instanceSettings.jsonData.timeout || 30;
           this.$q = $q;
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
@@ -62,7 +63,9 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           value: function query(options) {
             var _this = this;
 
-            var queries = _.map(options.targets, function (target) {
+            var queries = _.chain(options.targets).filter(function (target) {
+              return !target.hide;
+            }).map(function (target) {
               var params = {
                 query: _this.templateSrv.replace(_this.stripComment(target.query), options.scopedVars),
                 from: _this.convertTime(options.range.from, false),
@@ -70,7 +73,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 timeZone: 'Etc/UTC'
               };
               return _this.logQuery(params, target.format);
-            });
+            }).value();
 
             return Promise.all(queries).then(function (responses) {
               var result = [];
@@ -174,13 +177,12 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           value: function logQuery(params, format) {
             var _this3 = this;
 
-            var timeoutSec = 30;
             var startTime = new Date();
             return this.doRequest('POST', '/v1/search/jobs', params).then(function (job) {
               var loop = function loop() {
                 return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id).then(function (status) {
                   var now = new Date();
-                  if (now - startTime > timeoutSec * 1000) {
+                  if (now - startTime > _this3.timeoutSec * 1000) {
                     return _this3.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then(function (result) {
                       return Promise.reject({ message: 'timeout' });
                     });
@@ -188,6 +190,10 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
                   if (status.data.state !== 'DONE GATHERING RESULTS') {
                     return _this3.delay(loop, 1000);
+                  }
+
+                  if (status.data.pendingErrors.length !== 0 || status.data.pendingWarnings.length !== 0) {
+                    return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
                   }
 
                   if (format === 'time_series_records' || format === 'records') {
@@ -211,7 +217,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                   }
                 }).catch(function (err) {
                   // need to wait until job is created and registered
-                  if (err.data.code === 'searchjob.jobid.invalid') {
+                  if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                     return _this3.delay(loop, 1000);
                   } else {
                     return Promise.reject(err);
