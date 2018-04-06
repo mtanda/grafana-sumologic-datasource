@@ -254,7 +254,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             options.headers['Content-Type'] = 'application/json';
 
             return this.backendSrv.datasourceRequest(options).catch(function (err) {
-              if (err.data.code === 'rate.limit.exceeded') {
+              if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
                 return _this4.delay(function () {
                   return _this4.backendSrv.datasourceRequest(options);
                 }, 5000);
