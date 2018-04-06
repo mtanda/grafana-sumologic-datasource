@@ -201,7 +201,7 @@ export class SumologicDatasource {
     options.headers['Content-Type'] = 'application/json';
 
     return this.backendSrv.datasourceRequest(options).catch((err) => {
-      if (err.data.code === 'rate.limit.exceeded') {
+      if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
         return this.delay(() => {
           return this.backendSrv.datasourceRequest(options);
         }, 5000);
