@@ -84,9 +84,10 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 }
               });
 
-              var tableResponses = _.filter(responses, function (response, index) {
+              var tableResponses = _.chain(responses).filter(function (response, index) {
                 return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-              }).flatten();
+              }).flatten().value();
+
               if (tableResponses.length > 0) {
                 result.push(_this.transformDataToTable(tableResponses));
               }
