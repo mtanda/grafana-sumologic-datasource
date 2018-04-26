@@ -42,10 +42,13 @@ export class SumologicDatasource {
         }
       });
 
-      let tableResponses = _.filter(responses, (response, index) => {
-        return options.targets[index].format === 'records'
-          || options.targets[index].format === 'messages';
-      }).flatten();
+      let tableResponses = _.chain(responses)
+        .filter((response, index) => {
+          return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+        })
+        .flatten()
+        .value();
+
       if (tableResponses.length > 0) {
         result.push(this.transformDataToTable(tableResponses));
       }
