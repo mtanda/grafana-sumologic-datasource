@@ -47,6 +47,13 @@ To test this datasource plugin, add Table panel and set following query.
 
 `* | count by _sourceCategory`
 
+Query for generating graph panel is a bit trickier (you have to use timeslice):
+
+`* | timeslice by $__interval`
+
+NOTE: `$__interval` is a grafana variable, it makes your time buckets adjust accordingly to the query timerange.
+Of course you can use `timeslice` with a different argument if you wish.
+
 #### Limitation
 - This plugin only work with proxy mode. (Sumo Logic API doesn't support CORS)
 - This plugin doesn't support [Metrics API](https://help.sumologic.com/APIs/Metrics-API/About-Metrics-API).
