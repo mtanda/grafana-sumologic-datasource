@@ -56,6 +56,11 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
           this.timeSrv = timeSrv;
+          this.fieldIndex = {
+            tagKeys: new Set(),
+            tagValues: {}
+          };
+          this.excludeFieldList = ['_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime', '_size', '_timeslice', 'processing_time_ms'];
         }
 
         _createClass(SumologicDatasource, [{
@@ -72,11 +77,60 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 to: _this.convertTime(options.range.to, true),
                 timeZone: 'Etc/UTC'
               };
+              var adhocFilters = _this.templateSrv.getAdhocFilters(_this.name);
+              if (adhocFilters.length > 0) {
+                var filterQuery = ' | where ' + adhocFilters.map(function (f) {
+                  switch (f.operator) {
+                    case '=~':
+                      return f.key + ' ' + 'matches' + ' "' + f.value + '"';
+                    case '!~':
+                      return '!(' + f.key + ' ' + 'matches' + ' "' + f.value + '"' + ')';
+                    default:
+                      return f.key + ' ' + f.operator + ' "' + f.value + '"';
+                  }
+                }).join(' and ');
+                if (params.query.indexOf('|') === -1) {
+                  params.query += filterQuery;
+                } else {
+                  params.query = params.query.replace(/\|/, filterQuery + ' |');
+                }
+              }
               return _this.logQuery(params, target.format);
             }).value();
 
             return Promise.all(queries).then(function (responses) {
               var result = [];
+
+              if (_this.hasAdhocFilter()) {
+                _this.fieldIndex = {
+                  tagKeys: new Set(),
+                  tagValues: {}
+                };
+
+                // build fieldIndex
+                responses.forEach(function (r) {
+                  r.fields.map(function (f) {
+                    return f.name;
+                  }).filter(function (name) {
+                    return !_this.excludeFieldList.includes(name);
+                  }).forEach(function (name) {
+                    _this.fieldIndex.tagKeys.add(name);
+                  });
+                });
+
+                responses.forEach(function (r) {
+                  (r.records || r.messages).forEach(function (d) {
+                    Object.keys(d.map).filter(function (tagKey) {
+                      return !_this.excludeFieldList.includes(tagKey);
+                    }).forEach(function (tagKey) {
+                      if (!_this.fieldIndex.tagValues[tagKey]) {
+                        _this.fieldIndex.tagValues[tagKey] = new Set();
+                      }
+                      _this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                    });
+                  });
+                });
+              }
 
               _.each(responses, function (response, index) {
                 if (options.targets[index].format === 'time_series_records') {
@@ -433,6 +487,33 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               date = dateMath.parse(date, roundUp);
             }
             return date.valueOf();
+          }
+        }, {
+          key: 'hasAdhocFilter',
+          value: function hasAdhocFilter() {
+            return _.some(this.templateSrv.variables, function (variable) {
+              return variable.type === 'adhoc';
+            });
+          }
+        }, {
+          key: 'getTagKeys',
+          value: function getTagKeys(options) {
+            return Promise.resolve(Array.from(this.fieldIndex.tagKeys).map(function (k) {
+              return {
+                type: 'key',
+                text: k
+              };
+            }));
+          }
+        }, {
+          key: 'getTagValues',
+          value: function getTagValues(options) {
+            return Promise.resolve(Array.from(this.fieldIndex.tagValues[options.key]).map(function (v) {
+              return {
+                type: 'value',
+                text: v
+              };
+            }));
           }
         }]);
 
