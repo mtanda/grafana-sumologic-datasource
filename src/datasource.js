@@ -16,6 +16,14 @@ export class SumologicDatasource {
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
     this.timeSrv = timeSrv;
+    this.fieldIndex = {
+      tagKeys: new Set(),
+      tagValues: {}
+    };
+    this.excludeFieldList = [
+      '_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime',
+      '_size', '_timeslice', 'processing_time_ms'
+    ];
   }
 
   query(options) {
@@ -30,11 +38,60 @@ export class SumologicDatasource {
           to: this.convertTime(options.range.to, true),
           timeZone: 'Etc/UTC'
         };
+        let adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+        if (adhocFilters.length > 0) {
+          let filterQuery = ' | where ' + adhocFilters.map(f => {
+            switch (f.operator) {
+              case '=~':
+                return f.key + ' ' + 'matches' + ' "' + f.value + '"';
+              case '!~':
+                return '!(' + f.key + ' ' + 'matches' + ' "' + f.value + '"' + ')';
+              default:
+                return f.key + ' ' + f.operator + ' "' + f.value + '"';
+            }
+          }).join(' and ');
+          if (params.query.indexOf('|') === -1) {
+            params.query += filterQuery;
+          } else {
+            params.query = params.query.replace(/\|/, filterQuery + ' |');
+          }
+        }
         return this.logQuery(params, target.format)
       }).value();
 
     return Promise.all(queries).then(responses => {
       let result = [];
+
+      if (this.hasAdhocFilter()) {
+        this.fieldIndex = {
+          tagKeys: new Set(),
+          tagValues: {}
+        };
+
+        // build fieldIndex
+        responses.forEach(r => {
+          r.fields.map(f => {
+            return f.name;
+          }).filter(name => {
+            return !this.excludeFieldList.includes(name);
+          }).forEach(name => {
+            this.fieldIndex.tagKeys.add(name);
+          });
+        });
+
+        responses.forEach(r => {
+          (r.records || r.messages).forEach(d => {
+            Object.keys(d.map).filter(tagKey => {
+              return !this.excludeFieldList.includes(tagKey);
+            }).forEach(tagKey => {
+              if (!this.fieldIndex.tagValues[tagKey]) {
+                this.fieldIndex.tagValues[tagKey] = new Set();
+              }
+              this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+            });
+          });
+        });
+      }
 
       _.each(responses, (response, index) => {
         if (options.targets[index].format === 'time_series_records') {
@@ -332,5 +389,29 @@ export class SumologicDatasource {
       date = dateMath.parse(date, roundUp);
     }
     return date.valueOf();
+  }
+
+  hasAdhocFilter() {
+    return _.some(this.templateSrv.variables, variable => {
+      return variable.type === 'adhoc';
+    });
+  }
+
+  getTagKeys(options) {
+    return Promise.resolve(Array.from(this.fieldIndex.tagKeys).map(k => {
+      return {
+        type: 'key',
+        text: k
+      };
+    }));
+  }
+
+  getTagValues(options) {
+    return Promise.resolve(Array.from(this.fieldIndex.tagValues[options.key]).map(v => {
+      return {
+        type: 'value',
+        text: v
+      };
+    }));
   }
 }
