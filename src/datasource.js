@@ -296,7 +296,7 @@ export class SumologicDatasource {
 
     // columns
     table.columns = fields.map((c) => {
-      return { text: c };
+      return { text: c, filterable: true };
     });
 
     // rows
