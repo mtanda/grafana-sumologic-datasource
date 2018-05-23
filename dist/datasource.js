@@ -344,7 +344,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
             // columns
             table.columns = fields.map(function (c) {
-              return { text: c };
+              return { text: c, filterable: true };
             });
 
             // rows
