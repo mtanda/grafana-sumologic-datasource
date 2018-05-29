@@ -4,6 +4,9 @@ import angular from 'angular';
 import dateMath from 'app/core/utils/datemath';
 import TableModel from 'app/core/table_model';
 
+// Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
+const MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
+
 export class SumologicDatasource {
   constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
     this.type = instanceSettings.type;
@@ -20,10 +23,22 @@ export class SumologicDatasource {
       tagKeys: new Set(),
       tagValues: {}
     };
+    this.token = MAX_AVAILABLE_TOKEN;
+    this.tokenTimer = null;
     this.excludeFieldList = [
       '_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime',
       '_size', '_timeslice', 'processing_time_ms'
     ];
+  }
+
+  provideToken() {
+    if (this.token < MAX_AVAILABLE_TOKEN) {
+      this.token += 1;
+      if (this.token === MAX_AVAILABLE_TOKEN) {
+        clearInterval(this.tokenTimer);
+        this.tokenTimer = null;
+      }
+    }
   }
 
   query(options) {
@@ -56,7 +71,9 @@ export class SumologicDatasource {
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQuery(params, target.format)
+        return this.delay((retryCount) => {
+          return this.logQuery(params, target.format);
+        }, 0, Math.random() * 1000);
       }).value();
 
     return Promise.all(queries).then(responses => {
@@ -189,7 +206,7 @@ export class SumologicDatasource {
   logQuery(params, format) {
     let startTime = new Date();
     return this.doRequest('POST', '/v1/search/jobs', params).then((job) => {
-      let loop = () => {
+      let loop = (retryCount) => {
         return this.doRequest('GET', '/v1/search/jobs/' + job.data.id).then((status) => {
           let now = new Date();
           if (now - startTime > (this.timeoutSec * 1000)) {
@@ -199,10 +216,14 @@ export class SumologicDatasource {
           }
 
           if (status.data.state !== 'DONE GATHERING RESULTS') {
-            return this.delay(loop, 1000);
+            if (retryCount < 10) {
+              return this.delay(loop, retryCount + 1, this.calculateRetryWait(1000, retryCount));
+            } else {
+              return Promise.reject({ message: 'max retries exceeded' });
+            }
           }
 
-          if (status.data.pendingErrors.length !== 0 || status.data.pendingWarnings.length !== 0) {
+          if (!_.isEmpty(status.data.pendingErrors) || !_.isEmpty(status.data.pendingWarnings)) {
             return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
           }
 
@@ -226,24 +247,33 @@ export class SumologicDatasource {
             return Promise.reject({ message: 'unsupported type' });
           }
         }).catch((err) => {
+          if (err.data && err.data.code && err.data.code === 'unauthorized') {
+            return Promise.reject(err);
+          }
           // need to wait until job is created and registered
-          if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-            return this.delay(loop, 1000);
+          if (retryCount < 3 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+            return this.delay(loop, retryCount + 1, this.calculateRetryWait(1000, retryCount));
           } else {
             return Promise.reject(err);
           }
         });
       };
 
-      return this.delay(() => {
-        return loop().then((result) => {
+      return this.delay((retryCount) => {
+        return loop(retryCount).then((result) => {
           return result;
         });
-      }, 0);
+      }, 0, 0);
     });
   }
 
   doRequest(method, path, params) {
+    if (this.token === 0) {
+      return this.delay((retryCount) => {
+        return this.doRequest(method, path, params);
+      }, 0, 1000 / MAX_AVAILABLE_TOKEN);
+    }
+
     let options = {
       method: method,
       url: this.url + path,
@@ -260,23 +290,41 @@ export class SumologicDatasource {
     }
     options.headers['Content-Type'] = 'application/json';
 
+    this.token--;
+    if (this.tokenTimer === null) {
+      this.tokenTimer = setInterval(() => {
+        this.provideToken();
+      }, 1000 / MAX_AVAILABLE_TOKEN);
+    }
+
     return this.backendSrv.datasourceRequest(options).catch((err) => {
       if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
-        return this.delay(() => {
-          return this.backendSrv.datasourceRequest(options);
-        }, 5000);
+        this.token = 0;
+        return this.retryable(3, (retryCount) => {
+          return this.delay((retryCount) => {
+            return this.backendSrv.datasourceRequest(options);
+          }, retryCount, this.calculateRetryWait(1000, retryCount));
+        });
       } else {
         return Promise.reject(err);
       }
     });
   }
 
-  delay(func, wait) {
+  delay(func, retryCount, wait) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        func().then(resolve, reject);
+        func(retryCount).then(resolve, reject);
       }, wait);
     });
+  }
+
+  retryable(retryCount, func) {
+    let promise = Promise.reject().catch(() => func(retryCount));
+    for (let i = 0; i < retryCount; i++) {
+      promise = promise.catch(err => func(retryCount));
+    }
+    return promise;
   }
 
   transformDataToTable(data) {
@@ -413,5 +461,9 @@ export class SumologicDatasource {
         text: v
       };
     }));
+  }
+
+  calculateRetryWait(initialWait, retryCount) {
+    return initialWait * Math.min(10, Math.pow(2, retryCount));
   }
 }
