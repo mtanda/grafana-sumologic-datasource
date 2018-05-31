@@ -3,7 +3,7 @@
 System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/core/table_model'], function (_export, _context) {
   "use strict";
 
-  var _, moment, angular, dateMath, TableModel, _createClass, SumologicDatasource;
+  var _, moment, angular, dateMath, TableModel, _createClass, MAX_AVAILABLE_TOKEN, SumologicDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -42,6 +42,8 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         };
       }();
 
+      MAX_AVAILABLE_TOKEN = 4;
+
       _export('SumologicDatasource', SumologicDatasource = function () {
         function SumologicDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
           _classCallCheck(this, SumologicDatasource);
@@ -60,10 +62,23 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             tagKeys: new Set(),
             tagValues: {}
           };
+          this.token = MAX_AVAILABLE_TOKEN;
+          this.tokenTimer = null;
           this.excludeFieldList = ['_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime', '_size', '_timeslice', 'processing_time_ms'];
         }
 
         _createClass(SumologicDatasource, [{
+          key: 'provideToken',
+          value: function provideToken() {
+            if (this.token < MAX_AVAILABLE_TOKEN) {
+              this.token += 1;
+              if (this.token === MAX_AVAILABLE_TOKEN) {
+                clearInterval(this.tokenTimer);
+                this.tokenTimer = null;
+              }
+            }
+          }
+        }, {
           key: 'query',
           value: function query(options) {
             var _this = this;
@@ -95,7 +110,9 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                   params.query = params.query.replace(/\|/, filterQuery + ' |');
                 }
               }
-              return _this.logQuery(params, target.format);
+              return _this.delay(function (retryCount) {
+                return _this.logQuery(params, target.format);
+              }, 0, Math.random() * 1000);
             }).value();
 
             return Promise.all(queries).then(function (responses) {
@@ -234,7 +251,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
 
             var startTime = new Date();
             return this.doRequest('POST', '/v1/search/jobs', params).then(function (job) {
-              var loop = function loop() {
+              var loop = function loop(retryCount) {
                 return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id).then(function (status) {
                   var now = new Date();
                   if (now - startTime > _this3.timeoutSec * 1000) {
@@ -244,10 +261,14 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                   }
 
                   if (status.data.state !== 'DONE GATHERING RESULTS') {
-                    return _this3.delay(loop, 1000);
+                    if (retryCount < 10) {
+                      return _this3.delay(loop, retryCount + 1, _this3.calculateRetryWait(1000, retryCount));
+                    } else {
+                      return Promise.reject({ message: 'max retries exceeded' });
+                    }
                   }
 
-                  if (status.data.pendingErrors.length !== 0 || status.data.pendingWarnings.length !== 0) {
+                  if (!_.isEmpty(status.data.pendingErrors) || !_.isEmpty(status.data.pendingWarnings)) {
                     return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
                   }
 
@@ -271,26 +292,35 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                     return Promise.reject({ message: 'unsupported type' });
                   }
                 }).catch(function (err) {
+                  if (err.data && err.data.code && err.data.code === 'unauthorized') {
+                    return Promise.reject(err);
+                  }
                   // need to wait until job is created and registered
-                  if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                    return _this3.delay(loop, 1000);
+                  if (retryCount < 3 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                    return _this3.delay(loop, retryCount + 1, _this3.calculateRetryWait(1000, retryCount));
                   } else {
                     return Promise.reject(err);
                   }
                 });
               };
 
-              return _this3.delay(function () {
-                return loop().then(function (result) {
+              return _this3.delay(function (retryCount) {
+                return loop(retryCount).then(function (result) {
                   return result;
                 });
-              }, 0);
+              }, 0, 0);
             });
           }
         }, {
           key: 'doRequest',
           value: function doRequest(method, path, params) {
             var _this4 = this;
+
+            if (this.token === 0) {
+              return this.delay(function (retryCount) {
+                return _this4.doRequest(method, path, params);
+              }, 0, 1000 / MAX_AVAILABLE_TOKEN);
+            }
 
             var options = {
               method: method,
@@ -308,11 +338,21 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             }
             options.headers['Content-Type'] = 'application/json';
 
+            this.token--;
+            if (this.tokenTimer === null) {
+              this.tokenTimer = setInterval(function () {
+                _this4.provideToken();
+              }, 1000 / MAX_AVAILABLE_TOKEN);
+            }
+
             return this.backendSrv.datasourceRequest(options).catch(function (err) {
               if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
-                return _this4.delay(function () {
-                  return _this4.backendSrv.datasourceRequest(options);
-                }, 5000);
+                _this4.token = 0;
+                return _this4.retryable(3, function (retryCount) {
+                  return _this4.delay(function (retryCount) {
+                    return _this4.backendSrv.datasourceRequest(options);
+                  }, retryCount, _this4.calculateRetryWait(1000, retryCount));
+                });
               } else {
                 return Promise.reject(err);
               }
@@ -320,12 +360,25 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           }
         }, {
           key: 'delay',
-          value: function delay(func, wait) {
+          value: function delay(func, retryCount, wait) {
             return new Promise(function (resolve, reject) {
               setTimeout(function () {
-                func().then(resolve, reject);
+                func(retryCount).then(resolve, reject);
               }, wait);
             });
+          }
+        }, {
+          key: 'retryable',
+          value: function retryable(retryCount, func) {
+            var promise = Promise.reject().catch(function () {
+              return func(retryCount);
+            });
+            for (var i = 0; i < retryCount; i++) {
+              promise = promise.catch(function (err) {
+                return func(retryCount);
+              });
+            }
+            return promise;
           }
         }, {
           key: 'transformDataToTable',
@@ -514,6 +567,11 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 text: v
               };
             }));
+          }
+        }, {
+          key: 'calculateRetryWait',
+          value: function calculateRetryWait(initialWait, retryCount) {
+            return initialWait * Math.min(10, Math.pow(2, retryCount));
           }
         }]);
 
