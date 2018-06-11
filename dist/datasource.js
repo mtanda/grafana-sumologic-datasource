@@ -261,7 +261,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                   }
 
                   if (status.data.state !== 'DONE GATHERING RESULTS') {
-                    if (retryCount < 10) {
+                    if (retryCount < 20) {
                       return _this3.delay(loop, retryCount + 1, _this3.calculateRetryWait(1000, retryCount));
                     } else {
                       return Promise.reject({ message: 'max retries exceeded' });
@@ -296,7 +296,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                     return Promise.reject(err);
                   }
                   // need to wait until job is created and registered
-                  if (retryCount < 3 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                  if (retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                     return _this3.delay(loop, retryCount + 1, _this3.calculateRetryWait(1000, retryCount));
                   } else {
                     return Promise.reject(err);
@@ -319,7 +319,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             if (this.token === 0) {
               return this.delay(function (retryCount) {
                 return _this4.doRequest(method, path, params);
-              }, 0, 1000 / MAX_AVAILABLE_TOKEN);
+              }, 0, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
             }
 
             var options = {
@@ -342,7 +342,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             if (this.tokenTimer === null) {
               this.tokenTimer = setInterval(function () {
                 _this4.provideToken();
-              }, 1000 / MAX_AVAILABLE_TOKEN);
+              }, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
             }
 
             return this.backendSrv.datasourceRequest(options).catch(function (err) {
@@ -370,13 +370,15 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         }, {
           key: 'retryable',
           value: function retryable(retryCount, func) {
-            var promise = Promise.reject().catch(function () {
+            var promise = Promise.reject({}).catch(function () {
               return func(retryCount);
             });
             for (var i = 0; i < retryCount; i++) {
-              promise = promise.catch(function (err) {
-                return func(retryCount);
-              });
+              (function (i) {
+                promise = promise.catch(function (err) {
+                  return func(i + 1);
+                });
+              })(i);
             }
             return promise;
           }
@@ -571,7 +573,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         }, {
           key: 'calculateRetryWait',
           value: function calculateRetryWait(initialWait, retryCount) {
-            return initialWait * Math.min(10, Math.pow(2, retryCount));
+            return initialWait * Math.min(10, Math.pow(2, retryCount)) + Math.floor(Math.random() * 1000);
           }
         }]);
 
