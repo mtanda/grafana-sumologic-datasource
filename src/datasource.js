@@ -216,7 +216,7 @@ export class SumologicDatasource {
           }
 
           if (status.data.state !== 'DONE GATHERING RESULTS') {
-            if (retryCount < 10) {
+            if (retryCount < 20) {
               return this.delay(loop, retryCount + 1, this.calculateRetryWait(1000, retryCount));
             } else {
               return Promise.reject({ message: 'max retries exceeded' });
@@ -251,7 +251,7 @@ export class SumologicDatasource {
             return Promise.reject(err);
           }
           // need to wait until job is created and registered
-          if (retryCount < 3 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+          if (retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
             return this.delay(loop, retryCount + 1, this.calculateRetryWait(1000, retryCount));
           } else {
             return Promise.reject(err);
