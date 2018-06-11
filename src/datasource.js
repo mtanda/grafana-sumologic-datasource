@@ -271,7 +271,7 @@ export class SumologicDatasource {
     if (this.token === 0) {
       return this.delay((retryCount) => {
         return this.doRequest(method, path, params);
-      }, 0, 1000 / MAX_AVAILABLE_TOKEN);
+      }, 0, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
     }
 
     let options = {
@@ -294,7 +294,7 @@ export class SumologicDatasource {
     if (this.tokenTimer === null) {
       this.tokenTimer = setInterval(() => {
         this.provideToken();
-      }, 1000 / MAX_AVAILABLE_TOKEN);
+      }, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
     }
 
     return this.backendSrv.datasourceRequest(options).catch((err) => {
@@ -320,9 +320,11 @@ export class SumologicDatasource {
   }
 
   retryable(retryCount, func) {
-    let promise = Promise.reject().catch(() => func(retryCount));
+    let promise = Promise.reject({}).catch(() => func(retryCount));
     for (let i = 0; i < retryCount; i++) {
-      promise = promise.catch(err => func(retryCount));
+      ((i) => {
+        promise = promise.catch(err => func(i + 1));
+      })(i);
     }
     return promise;
   }
@@ -464,6 +466,7 @@ export class SumologicDatasource {
   }
 
   calculateRetryWait(initialWait, retryCount) {
-    return initialWait * Math.min(10, Math.pow(2, retryCount));
+    return initialWait * Math.min(10, Math.pow(2, retryCount)) +
+      Math.floor(Math.random() * 1000);
   }
 }
