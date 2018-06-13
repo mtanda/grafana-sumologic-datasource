@@ -79,6 +79,8 @@ export class SumologicDatasource {
     return Promise.all(queries).then(responses => {
       let result = [];
 
+      responses = responses.filter((r) => { return !_.isEmpty(r); });
+
       if (this.hasAdhocFilter()) {
         this.fieldIndex = {
           tagKeys: new Set(),
@@ -145,6 +147,9 @@ export class SumologicDatasource {
         timeZone: 'Etc/UTC'
       };
       return this.logQuery(params, 'records').then((result) => {
+        if (_.isEmpty(result)) {
+          return [];
+        }
         return result.records.map((r) => {
           return {
             text: r.map[recordKey],
@@ -172,6 +177,10 @@ export class SumologicDatasource {
       timeZone: 'Etc/UTC'
     };
     return this.logQuery(params, 'messages').then((result) => {
+      if (_.isEmpty(result)) {
+        return [];
+      }
+
       let eventList = result.messages.map((message) => {
         let tags = _.chain(message.map)
           .filter((v, k) => {
