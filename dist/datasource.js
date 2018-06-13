@@ -118,6 +118,10 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             return Promise.all(queries).then(function (responses) {
               var result = [];
 
+              responses = responses.filter(function (r) {
+                return !_.isEmpty(r);
+              });
+
               if (_this.hasAdhocFilter()) {
                 _this.fieldIndex = {
                   tagKeys: new Set(),
@@ -182,6 +186,9 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 timeZone: 'Etc/UTC'
               };
               return this.logQuery(params, 'records').then(function (result) {
+                if (_.isEmpty(result)) {
+                  return [];
+                }
                 return result.records.map(function (r) {
                   return {
                     text: r.map[recordKey],
@@ -214,6 +221,10 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               timeZone: 'Etc/UTC'
             };
             return this.logQuery(params, 'messages').then(function (result) {
+              if (_.isEmpty(result)) {
+                return [];
+              }
+
               var eventList = result.messages.map(function (message) {
                 var tags = _.chain(message.map).filter(function (v, k) {
                   return _.includes(tagKeys, k);
