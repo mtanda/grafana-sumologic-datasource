@@ -1,10 +1,11 @@
 import _ from 'lodash';
 
 export class SumologicQuerier {
-    constructor(params, format, timeoutSec, datasource, backendSrv) {
+    constructor(params, format, timeoutSec, useObservable, datasource, backendSrv) {
         this.params = params;
         this.format = format;
         this.timeoutSec = timeoutSec;
+        this.useObservable = useObservable;
         this.datasource = datasource;
         this.backendSrv = backendSrv;
         this.retryCount = 0;
@@ -20,17 +21,93 @@ export class SumologicQuerier {
     transition(state) {
         this.state = state;
         this.retryCount = 0;
-        return this.loop();
+        if (!this.useObservable) {
+            return this.loop();
+        } else {
+            return this.loopForObservable();
+        }
     }
 
     retry() {
         this.retryCount += 1;
         return this.delay(() => {
-            return this.loop();
+            if (!this.useObservable) {
+                return this.loop();
+            } else {
+                return this.loopForObservable();
+            }
         }, this.calculateRetryWait(1000, this.retryCount));
     }
 
     loop() {
+        if (this.job) {
+            let now = new Date();
+            if (now - this.startTime > (this.timeoutSec * 1000)) {
+                return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
+                    return Promise.reject({ message: 'timeout' });
+                });
+            }
+        }
+
+        switch (this.state) {
+            case 'CREATE_SEARCH_JOB':
+                return this.doRequest('POST', '/v1/search/jobs', this.params).then((job) => {
+                    this.job = job;
+                    return this.transition('REQUEST_STATUS');
+                });
+                break;
+            case 'REQUEST_STATUS':
+                return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then((status) => {
+                    this.status = status;
+                    if (this.status.data.state !== 'DONE GATHERING RESULTS') {
+                        if (this.retryCount < 20) {
+                            return this.retry();
+                        } else {
+                            return Promise.reject({ message: 'max retries exceeded' });
+                        }
+                    }
+
+                    if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
+                        return Promise.reject({ message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') });
+                    }
+                    return this.transition('REQUEST_RESULTS');
+                }).catch((err) => {
+                    if (err.data && err.data.code && err.data.code === 'unauthorized') {
+                        return Promise.reject(err);
+                    }
+                    // need to wait until job is created and registered
+                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                        return this.retry();
+                    } else {
+                        return Promise.reject(err);
+                    }
+                });
+                break;
+            case 'REQUEST_RESULTS':
+                if (this.format === 'time_series_records' || this.format === 'records') {
+                    if (this.status.data.recordCount === 0) {
+                        return Promise.resolve([]);
+                    }
+                    let limit = Math.min(10000, this.status.data.recordCount);
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
+                        return response.data;
+                    });
+                } else if (this.format === 'messages') {
+                    if (this.status.data.messageCount === 0) {
+                        return Promise.resolve([]);
+                    }
+                    let limit = Math.min(10000, this.status.data.messageCount);
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
+                        return response.data;
+                    });
+                } else {
+                    return Promise.reject({ message: 'unsupported type' });
+                }
+                break;
+        }
+    }
+
+    loopForObservable() {
         if (this.job) {
             let now = new Date();
             if (now - this.startTime > (this.timeoutSec * 1000)) {

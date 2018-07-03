@@ -72,7 +72,7 @@ export class SumologicDatasource {
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQuery(params, target.format);
+        return this.logQuery(params, target.format, true);
       }).value();
 
     return Promise.all(queries).then(responses => {
@@ -145,7 +145,7 @@ export class SumologicDatasource {
         to: String(this.convertTime(range.to, true)),
         timeZone: 'Etc/UTC'
       };
-      return this.logQuery(params, 'records').then((result) => {
+      return this.logQuery(params, 'records', false).then((result) => {
         if (_.isEmpty(result)) {
           return [];
         }
@@ -175,7 +175,7 @@ export class SumologicDatasource {
       to: String(this.convertTime(options.range.to, true)),
       timeZone: 'Etc/UTC'
     };
-    return this.logQuery(params, 'messages').then((result) => {
+    return this.logQuery(params, 'messages', false).then((result) => {
       if (_.isEmpty(result)) {
         return [];
       }
@@ -206,13 +206,13 @@ export class SumologicDatasource {
       to: (new Date()).getTime(),
       timeZone: 'Etc/UTC'
     };
-    return this.logQuery(params, 'records').then((response) => {
+    return this.logQuery(params, 'records', false).then((response) => {
       return { status: 'success', message: 'Data source is working', title: 'Success' };
     });
   }
 
-  logQuery(params, format) {
-    let querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
+  logQuery(params, format, useObservable) {
+    let querier = new SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
     return querier.getResult();
   }
 
