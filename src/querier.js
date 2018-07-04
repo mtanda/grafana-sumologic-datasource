@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import Observable from 'rxjs/Observable';
 
 export class SumologicQuerier {
     constructor(params, format, timeoutSec, useObservable, datasource, backendSrv) {
@@ -9,13 +10,21 @@ export class SumologicQuerier {
         this.datasource = datasource;
         this.backendSrv = backendSrv;
         this.retryCount = 0;
+        this.offset = 0;
+        this.maximumOffset = 10000;
     }
 
     getResult() {
         this.startTime = new Date();
-        return this.delay(() => {
-            return this.transition('CREATE_SEARCH_JOB');
-        }, Math.random() * 1000);
+        if (!this.useObservable) {
+            return this.delay(() => {
+                return this.transition('CREATE_SEARCH_JOB');
+            }, Math.random() * 1000);
+        } else {
+            return Observable.defer(() => {
+                return this.transition('CREATE_SEARCH_JOB');
+            });
+        }
     }
 
     transition(state) {
@@ -88,7 +97,7 @@ export class SumologicQuerier {
                     if (this.status.data.recordCount === 0) {
                         return Promise.resolve([]);
                     }
-                    let limit = Math.min(10000, this.status.data.recordCount);
+                    let limit = Math.min(this.maximumOffset, this.status.data.recordCount);
                     return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
                         return response.data;
                     });
@@ -96,7 +105,7 @@ export class SumologicQuerier {
                     if (this.status.data.messageCount === 0) {
                         return Promise.resolve([]);
                     }
-                    let limit = Math.min(10000, this.status.data.messageCount);
+                    let limit = Math.min(this.maximumOffset, this.status.data.messageCount);
                     return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
                         return response.data;
                     });
@@ -127,18 +136,25 @@ export class SumologicQuerier {
             case 'REQUEST_STATUS':
                 return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then((status) => {
                     this.status = status;
-                    if (this.status.data.state !== 'DONE GATHERING RESULTS') {
-                        if (this.retryCount < 20) {
-                            return this.retry();
-                        } else {
-                            return Promise.reject({ message: 'max retries exceeded' });
-                        }
-                    }
+                    let prevMessageCount = this.messageCount;
+                    let prevRecordCount = this.RecordCount;
+                    this.messageCount = this.status.data.messageCount;
+                    this.recordCount = this.status.data.recordCount;
 
                     if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
                         return Promise.reject({ message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') });
                     }
-                    return this.transition('REQUEST_RESULTS');
+
+                    if (this.status.data.state === 'DONE GATHERING RESULTS') {
+                        return this.transition('REQUEST_RESULTS');
+                    }
+
+                    if (this.messageCount > prevMessageCount || this.recordCount > prevRecordCount) {
+                        return this.transition('REQUEST_RESULTS');
+                    }
+
+                    // wait for new result arrival
+                    return this.transition('REQUEST_STATUS');
                 }).catch((err) => {
                     if (err.data && err.data.code && err.data.code === 'unauthorized') {
                         return Promise.reject(err);
@@ -153,20 +169,32 @@ export class SumologicQuerier {
                 break;
             case 'REQUEST_RESULTS':
                 if (this.format === 'time_series_records' || this.format === 'records') {
-                    if (this.status.data.recordCount === 0) {
-                        return Promise.resolve([]);
-                    }
-                    let limit = Math.min(10000, this.status.data.recordCount);
-                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
-                        return response.data;
+                    let limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit).then((response) => {
+                        this.offset += response.data.records.length;
+                        if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                            return Observable.from([response.data]);
+                        }
+                        return Observable.from([response.data])
+                            .concat(
+                                Observable.defer(() => {
+                                    return this.transition('REQUEST_STATUS');
+                                }).mergeMap(value => value)
+                            );
                     });
                 } else if (this.format === 'messages') {
-                    if (this.status.data.messageCount === 0) {
-                        return Promise.resolve([]);
-                    }
-                    let limit = Math.min(10000, this.status.data.messageCount);
-                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
-                        return response.data;
+                    let limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit).then((response) => {
+                        this.offset += response.data.messages.length;
+                        if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                            return Observable.from([response.data]);
+                        }
+                        return Observable.from([response.data])
+                            .concat(
+                                Observable.defer(() => {
+                                    return this.transition('REQUEST_STATUS');
+                                }).mergeMap(value => value)
+                            );
                     });
                 } else {
                     return Promise.reject({ message: 'unsupported type' });

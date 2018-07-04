@@ -4,6 +4,7 @@ import angular from 'angular';
 import dateMath from 'app/core/utils/datemath';
 import TableModel from 'app/core/table_model';
 import { SumologicQuerier } from './querier';
+import Observable from 'rxjs/Observable';
 
 
 export class SumologicDatasource {
@@ -43,6 +44,7 @@ export class SumologicDatasource {
   }
 
   query(options) {
+    let self = this;
     let queries = _.chain(options.targets)
       .filter((target) => {
         return !target.hide && target.query;
@@ -72,64 +74,72 @@ export class SumologicDatasource {
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQuery(params, target.format, true);
-      }).value();
-
-    return Promise.all(queries).then(responses => {
-      let result = [];
-
-      responses = responses.filter((r) => { return !_.isEmpty(r); });
-
-      if (this.hasAdhocFilter()) {
-        this.fieldIndex = {
-          tagKeys: new Set(),
-          tagValues: {}
-        };
-
-        // build fieldIndex
-        responses.forEach(r => {
-          r.fields.map(f => {
-            return f.name;
-          }).filter(name => {
-            return !this.excludeFieldList.includes(name);
-          }).forEach(name => {
-            this.fieldIndex.tagKeys.add(name);
+        return this.logQuery(params, target.format, true)
+          .mergeMap(value => value)
+          .scan((acc, one) => {
+            acc.fields = one.fields;
+            if (one.records) {
+              acc.records = (acc.records || []).concat(one.records);
+            } else if (one.messages) {
+              acc.messages = (acc.messages || []).concat(one.messages);
+            }
+            return acc;
+          }, {})
+          .map((data) => {
+            if (target.format === 'time_series_records') {
+              return self.transformRecordsToTimeSeries(data, target, options.range.to.valueOf());
+            }
+            return data;
           });
-        });
+      }).value();
+    return Observable
+      .combineLatest(queries)
+      .map((responses) => {
+        responses = responses.filter((r) => { return !_.isEmpty(r); });
 
-        responses.forEach(r => {
-          (r.records || r.messages).forEach(d => {
-            Object.keys(d.map).filter(tagKey => {
-              return !this.excludeFieldList.includes(tagKey);
-            }).forEach(tagKey => {
-              if (!this.fieldIndex.tagValues[tagKey]) {
-                this.fieldIndex.tagValues[tagKey] = new Set();
-              }
-              this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+        if (this.hasAdhocFilter()) {
+          this.fieldIndex = {
+            tagKeys: new Set(),
+            tagValues: {}
+          };
+
+          // build fieldIndex
+          responses.forEach(r => {
+            r.fields.map(f => {
+              return f.name;
+            }).filter(name => {
+              return !this.excludeFieldList.includes(name);
+            }).forEach(name => {
+              this.fieldIndex.tagKeys.add(name);
             });
           });
-        });
-      }
 
-      _.each(responses, (response, index) => {
-        if (options.targets[index].format === 'time_series_records') {
-          result = result.concat(this.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf()));
+          responses.forEach(r => {
+            (r.records || r.messages).forEach(d => {
+              Object.keys(d.map).filter(tagKey => {
+                return !this.excludeFieldList.includes(tagKey);
+              }).forEach(tagKey => {
+                if (!this.fieldIndex.tagValues[tagKey]) {
+                  this.fieldIndex.tagValues[tagKey] = new Set();
+                }
+                this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+              });
+            });
+          });
         }
+
+        let tableResponses = _.chain(responses)
+          .filter((response, index) => {
+            return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+          })
+          .flatten()
+          .value();
+
+        if (tableResponses.length > 0) {
+          return { data: [self.transformDataToTable(tableResponses)] };
+        }
+        return { data: responses.flatten() };
       });
-
-      let tableResponses = _.chain(responses)
-        .filter((response, index) => {
-          return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-        })
-        .flatten()
-        .value();
-
-      if (tableResponses.length > 0) {
-        result.push(this.transformDataToTable(tableResponses));
-      }
-
-      return { data: result };
-    });
   }
 
   metricFindQuery(query) {
