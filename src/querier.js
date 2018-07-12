@@ -151,7 +151,10 @@ export class SumologicQuerier {
                         return this.transition('REQUEST_RESULTS');
                     }
 
-                    if (this.messageCount > prevMessageCount || this.recordCount > prevRecordCount) {
+                    if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
+                        return this.transition('REQUEST_RESULTS');
+                    }
+                    if (this.format === 'messages' && this.messageCount > prevMessageCount) {
                         return this.transition('REQUEST_RESULTS');
                     }
 

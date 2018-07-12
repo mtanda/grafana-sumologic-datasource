@@ -84,13 +84,7 @@ export class SumologicDatasource {
               acc.messages = (acc.messages || []).concat(one.messages);
             }
             return acc;
-          }, {})
-          .map((data) => {
-            if (target.format === 'time_series_records') {
-              return self.transformRecordsToTimeSeries(data, target, options.range.to.valueOf());
-            }
-            return data;
-          });
+          }, {});
       }).value();
     return Observable
       .combineLatest(queries)
@@ -137,8 +131,16 @@ export class SumologicDatasource {
 
         if (tableResponses.length > 0) {
           return { data: [self.transformDataToTable(tableResponses)] };
+        } else {
+          return {
+            data: responses.map((response, index) => {
+              if (options.targets[index].format === 'time_series_records') {
+                return self.transformRecordsToTimeSeries(response, options.targets[index].format, options.range.to.valueOf());
+              }
+              return data;
+            }).flatten()
+          };
         }
-        return { data: responses.flatten() };
       });
   }
 
