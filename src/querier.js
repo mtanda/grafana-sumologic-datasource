@@ -22,7 +22,9 @@ export class SumologicQuerier {
             }, Math.random() * 1000);
         } else {
             return Observable.defer(() => {
-                return this.transition('CREATE_SEARCH_JOB');
+                return this.delay(() => {
+                    return this.transition('CREATE_SEARCH_JOB');
+                }, Math.random() * 1000);
             });
         }
     }
