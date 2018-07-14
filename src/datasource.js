@@ -3,9 +3,9 @@ import moment from 'moment';
 import angular from 'angular';
 import dateMath from 'app/core/utils/datemath';
 import TableModel from 'app/core/table_model';
+import { SumologicQuerier } from './querier';
+import Observable from 'rxjs/Observable';
 
-// Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
-const MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
 
 export class SumologicDatasource {
   constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
@@ -23,7 +23,9 @@ export class SumologicDatasource {
       tagKeys: new Set(),
       tagValues: {}
     };
-    this.token = MAX_AVAILABLE_TOKEN;
+    // Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
+    this.MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
+    this.token = this.MAX_AVAILABLE_TOKEN;
     this.tokenTimer = null;
     this.excludeFieldList = [
       '_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime',
@@ -32,9 +34,9 @@ export class SumologicDatasource {
   }
 
   provideToken() {
-    if (this.token < MAX_AVAILABLE_TOKEN) {
+    if (this.token < this.MAX_AVAILABLE_TOKEN) {
       this.token += 1;
-      if (this.token === MAX_AVAILABLE_TOKEN) {
+      if (this.token === this.MAX_AVAILABLE_TOKEN) {
         clearInterval(this.tokenTimer);
         this.tokenTimer = null;
       }
@@ -42,6 +44,7 @@ export class SumologicDatasource {
   }
 
   query(options) {
+    let self = this;
     let queries = _.chain(options.targets)
       .filter((target) => {
         return !target.hide && target.query;
@@ -71,66 +74,74 @@ export class SumologicDatasource {
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.delay((retryCount) => {
-          return this.logQuery(params, target.format);
-        }, 0, Math.random() * 1000);
+        return this.logQuery(params, target.format, true)
+          .mergeMap(value => value)
+          .scan((acc, one) => {
+            acc.fields = one.fields;
+            if (one.records) {
+              acc.records = (acc.records || []).concat(one.records);
+            } else if (one.messages) {
+              acc.messages = (acc.messages || []).concat(one.messages);
+            }
+            return acc;
+          }, {});
       }).value();
+    return Observable
+      .combineLatest(queries)
+      .map((responses) => {
+        responses = responses.filter((r) => { return !_.isEmpty(r); });
 
-    return Promise.all(queries).then(responses => {
-      let result = [];
+        if (this.hasAdhocFilter()) {
+          this.fieldIndex = {
+            tagKeys: new Set(),
+            tagValues: {}
+          };
 
-      responses = responses.filter((r) => { return !_.isEmpty(r); });
-
-      if (this.hasAdhocFilter()) {
-        this.fieldIndex = {
-          tagKeys: new Set(),
-          tagValues: {}
-        };
-
-        // build fieldIndex
-        responses.forEach(r => {
-          r.fields.map(f => {
-            return f.name;
-          }).filter(name => {
-            return !this.excludeFieldList.includes(name);
-          }).forEach(name => {
-            this.fieldIndex.tagKeys.add(name);
-          });
-        });
-
-        responses.forEach(r => {
-          (r.records || r.messages).forEach(d => {
-            Object.keys(d.map).filter(tagKey => {
-              return !this.excludeFieldList.includes(tagKey);
-            }).forEach(tagKey => {
-              if (!this.fieldIndex.tagValues[tagKey]) {
-                this.fieldIndex.tagValues[tagKey] = new Set();
-              }
-              this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+          // build fieldIndex
+          responses.forEach(r => {
+            r.fields.map(f => {
+              return f.name;
+            }).filter(name => {
+              return !this.excludeFieldList.includes(name);
+            }).forEach(name => {
+              this.fieldIndex.tagKeys.add(name);
             });
           });
-        });
-      }
 
-      _.each(responses, (response, index) => {
-        if (options.targets[index].format === 'time_series_records') {
-          result = result.concat(this.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf()));
+          responses.forEach(r => {
+            (r.records || r.messages).forEach(d => {
+              Object.keys(d.map).filter(tagKey => {
+                return !this.excludeFieldList.includes(tagKey);
+              }).forEach(tagKey => {
+                if (!this.fieldIndex.tagValues[tagKey]) {
+                  this.fieldIndex.tagValues[tagKey] = new Set();
+                }
+                this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+              });
+            });
+          });
+        }
+
+        let tableResponses = _.chain(responses)
+          .filter((response, index) => {
+            return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+          })
+          .flatten()
+          .value();
+
+        if (tableResponses.length > 0) {
+          return { data: [self.transformDataToTable(tableResponses)] };
+        } else {
+          return {
+            data: responses.map((response, index) => {
+              if (options.targets[index].format === 'time_series_records') {
+                return self.transformRecordsToTimeSeries(response, options.targets[index].format, options.range.to.valueOf());
+              }
+              return data;
+            }).flatten()
+          };
         }
       });
-
-      let tableResponses = _.chain(responses)
-        .filter((response, index) => {
-          return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-        })
-        .flatten()
-        .value();
-
-      if (tableResponses.length > 0) {
-        result.push(this.transformDataToTable(tableResponses));
-      }
-
-      return { data: result };
-    });
   }
 
   metricFindQuery(query) {
@@ -146,7 +157,7 @@ export class SumologicDatasource {
         to: String(this.convertTime(range.to, true)),
         timeZone: 'Etc/UTC'
       };
-      return this.logQuery(params, 'records').then((result) => {
+      return this.logQuery(params, 'records', false).then((result) => {
         if (_.isEmpty(result)) {
           return [];
         }
@@ -176,7 +187,7 @@ export class SumologicDatasource {
       to: String(this.convertTime(options.range.to, true)),
       timeZone: 'Etc/UTC'
     };
-    return this.logQuery(params, 'messages').then((result) => {
+    return this.logQuery(params, 'messages', false).then((result) => {
       if (_.isEmpty(result)) {
         return [];
       }
@@ -207,135 +218,14 @@ export class SumologicDatasource {
       to: (new Date()).getTime(),
       timeZone: 'Etc/UTC'
     };
-    return this.logQuery(params, 'records').then((response) => {
+    return this.logQuery(params, 'records', false).then((response) => {
       return { status: 'success', message: 'Data source is working', title: 'Success' };
     });
   }
 
-  logQuery(params, format) {
-    let startTime = new Date();
-    return this.doRequest('POST', '/v1/search/jobs', params).then((job) => {
-      let loop = (retryCount) => {
-        return this.doRequest('GET', '/v1/search/jobs/' + job.data.id).then((status) => {
-          let now = new Date();
-          if (now - startTime > (this.timeoutSec * 1000)) {
-            return this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then((result) => {
-              return Promise.reject({ message: 'timeout' });
-            });
-          }
-
-          if (status.data.state !== 'DONE GATHERING RESULTS') {
-            if (retryCount < 20) {
-              return this.delay(loop, retryCount + 1, this.calculateRetryWait(1000, retryCount));
-            } else {
-              return Promise.reject({ message: 'max retries exceeded' });
-            }
-          }
-
-          if (!_.isEmpty(status.data.pendingErrors) || !_.isEmpty(status.data.pendingWarnings)) {
-            return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
-          }
-
-          if (format === 'time_series_records' || format === 'records') {
-            if (status.data.recordCount === 0) {
-              return Promise.resolve([]);
-            }
-            let limit = Math.min(10000, status.data.recordCount);
-            return this.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
-              return response.data;
-            });
-          } else if (format === 'messages') {
-            if (status.data.messageCount === 0) {
-              return Promise.resolve([]);
-            }
-            let limit = Math.min(10000, status.data.messageCount);
-            return this.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
-              return response.data;
-            });
-          } else {
-            return Promise.reject({ message: 'unsupported type' });
-          }
-        }).catch((err) => {
-          if (err.data && err.data.code && err.data.code === 'unauthorized') {
-            return Promise.reject(err);
-          }
-          // need to wait until job is created and registered
-          if (retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-            return this.delay(loop, retryCount + 1, this.calculateRetryWait(1000, retryCount));
-          } else {
-            return Promise.reject(err);
-          }
-        });
-      };
-
-      return this.delay((retryCount) => {
-        return loop(retryCount).then((result) => {
-          return result;
-        });
-      }, 0, 0);
-    });
-  }
-
-  doRequest(method, path, params) {
-    if (this.token === 0) {
-      return this.delay((retryCount) => {
-        return this.doRequest(method, path, params);
-      }, 0, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
-    }
-
-    let options = {
-      method: method,
-      url: this.url + path,
-      data: params,
-      headers: {},
-      inspect: { type: 'sumologic' }
-    };
-
-    if (this.basicAuth || this.withCredentials) {
-      options.withCredentials = true;
-    }
-    if (this.basicAuth) {
-      options.headers.Authorization = this.basicAuth;
-    }
-    options.headers['Content-Type'] = 'application/json';
-
-    this.token--;
-    if (this.tokenTimer === null) {
-      this.tokenTimer = setInterval(() => {
-        this.provideToken();
-      }, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
-    }
-
-    return this.backendSrv.datasourceRequest(options).catch((err) => {
-      if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
-        this.token = 0;
-        return this.retryable(3, (retryCount) => {
-          return this.delay((retryCount) => {
-            return this.backendSrv.datasourceRequest(options);
-          }, retryCount, this.calculateRetryWait(1000, retryCount));
-        });
-      } else {
-        return Promise.reject(err);
-      }
-    });
-  }
-
-  delay(func, retryCount, wait) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        func(retryCount).then(resolve, reject);
-      }, wait);
-    });
-  }
-
-  retryable(retryCount, func) {
-    let promise = Promise.reject({}).catch(() => func(retryCount));
-    for (let i = 0; i < retryCount; i++) {
-      ((i) => {
-        promise = promise.catch(err => func(i + 1));
-      })(i);
-    }
-    return promise;
+  logQuery(params, format, useObservable) {
+    let querier = new SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
+    return querier.getResult();
   }
 
   transformDataToTable(data) {
@@ -472,10 +362,5 @@ export class SumologicDatasource {
         text: v
       };
     }));
-  }
-
-  calculateRetryWait(initialWait, retryCount) {
-    return initialWait * Math.min(10, Math.pow(2, retryCount)) +
-      Math.floor(Math.random() * 1000);
   }
 }

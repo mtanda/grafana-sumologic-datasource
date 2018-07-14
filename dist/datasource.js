@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/core/table_model'], function (_export, _context) {
+System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/core/table_model', './querier', 'rxjs/Observable'], function (_export, _context) {
   "use strict";
 
-  var _, moment, angular, dateMath, TableModel, _createClass, MAX_AVAILABLE_TOKEN, SumologicDatasource;
+  var _, moment, angular, dateMath, TableModel, SumologicQuerier, Observable, _createClass, SumologicDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -22,6 +22,10 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
       dateMath = _appCoreUtilsDatemath.default;
     }, function (_appCoreTable_model) {
       TableModel = _appCoreTable_model.default;
+    }, function (_querier) {
+      SumologicQuerier = _querier.SumologicQuerier;
+    }, function (_rxjsObservable) {
+      Observable = _rxjsObservable.default;
     }],
     execute: function () {
       _createClass = function () {
@@ -42,8 +46,6 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         };
       }();
 
-      MAX_AVAILABLE_TOKEN = 4;
-
       _export('SumologicDatasource', SumologicDatasource = function () {
         function SumologicDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
           _classCallCheck(this, SumologicDatasource);
@@ -62,7 +64,9 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
             tagKeys: new Set(),
             tagValues: {}
           };
-          this.token = MAX_AVAILABLE_TOKEN;
+          // Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
+          this.MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
+          this.token = this.MAX_AVAILABLE_TOKEN;
           this.tokenTimer = null;
           this.excludeFieldList = ['_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime', '_size', '_timeslice', 'processing_time_ms'];
         }
@@ -70,9 +74,9 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         _createClass(SumologicDatasource, [{
           key: 'provideToken',
           value: function provideToken() {
-            if (this.token < MAX_AVAILABLE_TOKEN) {
+            if (this.token < this.MAX_AVAILABLE_TOKEN) {
               this.token += 1;
-              if (this.token === MAX_AVAILABLE_TOKEN) {
+              if (this.token === this.MAX_AVAILABLE_TOKEN) {
                 clearInterval(this.tokenTimer);
                 this.tokenTimer = null;
               }
@@ -83,6 +87,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
           value: function query(options) {
             var _this = this;
 
+            var self = this;
             var queries = _.chain(options.targets).filter(function (target) {
               return !target.hide && target.query;
             }).map(function (target) {
@@ -110,14 +115,19 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                   params.query = params.query.replace(/\|/, filterQuery + ' |');
                 }
               }
-              return _this.delay(function (retryCount) {
-                return _this.logQuery(params, target.format);
-              }, 0, Math.random() * 1000);
+              return _this.logQuery(params, target.format, true).mergeMap(function (value) {
+                return value;
+              }).scan(function (acc, one) {
+                acc.fields = one.fields;
+                if (one.records) {
+                  acc.records = (acc.records || []).concat(one.records);
+                } else if (one.messages) {
+                  acc.messages = (acc.messages || []).concat(one.messages);
+                }
+                return acc;
+              }, {});
             }).value();
-
-            return Promise.all(queries).then(function (responses) {
-              var result = [];
-
+            return Observable.combineLatest(queries).map(function (responses) {
               responses = responses.filter(function (r) {
                 return !_.isEmpty(r);
               });
@@ -153,21 +163,22 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 });
               }
 
-              _.each(responses, function (response, index) {
-                if (options.targets[index].format === 'time_series_records') {
-                  result = result.concat(_this.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf()));
-                }
-              });
-
               var tableResponses = _.chain(responses).filter(function (response, index) {
                 return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
               }).flatten().value();
 
               if (tableResponses.length > 0) {
-                result.push(_this.transformDataToTable(tableResponses));
+                return { data: [self.transformDataToTable(tableResponses)] };
+              } else {
+                return {
+                  data: responses.map(function (response, index) {
+                    if (options.targets[index].format === 'time_series_records') {
+                      return self.transformRecordsToTimeSeries(response, options.targets[index].format, options.range.to.valueOf());
+                    }
+                    return data;
+                  }).flatten()
+                };
               }
-
-              return { data: result };
             });
           }
         }, {
@@ -185,7 +196,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 to: String(this.convertTime(range.to, true)),
                 timeZone: 'Etc/UTC'
               };
-              return this.logQuery(params, 'records').then(function (result) {
+              return this.logQuery(params, 'records', false).then(function (result) {
                 if (_.isEmpty(result)) {
                   return [];
                 }
@@ -220,7 +231,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               to: String(this.convertTime(options.range.to, true)),
               timeZone: 'Etc/UTC'
             };
-            return this.logQuery(params, 'messages').then(function (result) {
+            return this.logQuery(params, 'messages', false).then(function (result) {
               if (_.isEmpty(result)) {
                 return [];
               }
@@ -251,147 +262,15 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
               to: new Date().getTime(),
               timeZone: 'Etc/UTC'
             };
-            return this.logQuery(params, 'records').then(function (response) {
+            return this.logQuery(params, 'records', false).then(function (response) {
               return { status: 'success', message: 'Data source is working', title: 'Success' };
             });
           }
         }, {
           key: 'logQuery',
-          value: function logQuery(params, format) {
-            var _this3 = this;
-
-            var startTime = new Date();
-            return this.doRequest('POST', '/v1/search/jobs', params).then(function (job) {
-              var loop = function loop(retryCount) {
-                return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id).then(function (status) {
-                  var now = new Date();
-                  if (now - startTime > _this3.timeoutSec * 1000) {
-                    return _this3.doRequest('DELETE', '/v1/search/jobs/' + job.data.id).then(function (result) {
-                      return Promise.reject({ message: 'timeout' });
-                    });
-                  }
-
-                  if (status.data.state !== 'DONE GATHERING RESULTS') {
-                    if (retryCount < 20) {
-                      return _this3.delay(loop, retryCount + 1, _this3.calculateRetryWait(1000, retryCount));
-                    } else {
-                      return Promise.reject({ message: 'max retries exceeded' });
-                    }
-                  }
-
-                  if (!_.isEmpty(status.data.pendingErrors) || !_.isEmpty(status.data.pendingWarnings)) {
-                    return Promise.reject({ message: status.data.pendingErrors.concat(status.data.pendingWarnings).join('\n') });
-                  }
-
-                  if (format === 'time_series_records' || format === 'records') {
-                    if (status.data.recordCount === 0) {
-                      return Promise.resolve([]);
-                    }
-                    var limit = Math.min(10000, status.data.recordCount);
-                    return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/records?offset=0&limit=' + limit).then(function (response) {
-                      return response.data;
-                    });
-                  } else if (format === 'messages') {
-                    if (status.data.messageCount === 0) {
-                      return Promise.resolve([]);
-                    }
-                    var _limit = Math.min(10000, status.data.messageCount);
-                    return _this3.doRequest('GET', '/v1/search/jobs/' + job.data.id + '/messages?offset=0&limit=' + _limit).then(function (response) {
-                      return response.data;
-                    });
-                  } else {
-                    return Promise.reject({ message: 'unsupported type' });
-                  }
-                }).catch(function (err) {
-                  if (err.data && err.data.code && err.data.code === 'unauthorized') {
-                    return Promise.reject(err);
-                  }
-                  // need to wait until job is created and registered
-                  if (retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                    return _this3.delay(loop, retryCount + 1, _this3.calculateRetryWait(1000, retryCount));
-                  } else {
-                    return Promise.reject(err);
-                  }
-                });
-              };
-
-              return _this3.delay(function (retryCount) {
-                return loop(retryCount).then(function (result) {
-                  return result;
-                });
-              }, 0, 0);
-            });
-          }
-        }, {
-          key: 'doRequest',
-          value: function doRequest(method, path, params) {
-            var _this4 = this;
-
-            if (this.token === 0) {
-              return this.delay(function (retryCount) {
-                return _this4.doRequest(method, path, params);
-              }, 0, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
-            }
-
-            var options = {
-              method: method,
-              url: this.url + path,
-              data: params,
-              headers: {},
-              inspect: { type: 'sumologic' }
-            };
-
-            if (this.basicAuth || this.withCredentials) {
-              options.withCredentials = true;
-            }
-            if (this.basicAuth) {
-              options.headers.Authorization = this.basicAuth;
-            }
-            options.headers['Content-Type'] = 'application/json';
-
-            this.token--;
-            if (this.tokenTimer === null) {
-              this.tokenTimer = setInterval(function () {
-                _this4.provideToken();
-              }, Math.ceil(1000 / MAX_AVAILABLE_TOKEN));
-            }
-
-            return this.backendSrv.datasourceRequest(options).catch(function (err) {
-              if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
-                _this4.token = 0;
-                return _this4.retryable(3, function (retryCount) {
-                  return _this4.delay(function (retryCount) {
-                    return _this4.backendSrv.datasourceRequest(options);
-                  }, retryCount, _this4.calculateRetryWait(1000, retryCount));
-                });
-              } else {
-                return Promise.reject(err);
-              }
-            });
-          }
-        }, {
-          key: 'delay',
-          value: function delay(func, retryCount, wait) {
-            return new Promise(function (resolve, reject) {
-              setTimeout(function () {
-                func(retryCount).then(resolve, reject);
-              }, wait);
-            });
-          }
-        }, {
-          key: 'retryable',
-          value: function retryable(retryCount, func) {
-            var promise = Promise.reject({}).catch(function () {
-              return func(retryCount);
-            });
-            for (var i = 0; i < retryCount; i++) {
-              (function (i) {
-                promise = promise.catch(function (err) {
-                  return func(i + 1);
-                });
-              })(i);
-            }
-            return promise;
+          value: function logQuery(params, format, useObservable) {
+            var querier = new SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
+            return querier.getResult();
           }
         }, {
           key: 'transformDataToTable',
@@ -472,7 +351,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
         }, {
           key: 'transformRecordsToTimeSeries',
           value: function transformRecordsToTimeSeries(response, target, defaultValue) {
-            var _this5 = this;
+            var _this3 = this;
 
             var metricLabel = '';
             var dps = [];
@@ -508,7 +387,7 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 return 0;
               }
             }).forEach(function (r) {
-              metricLabel = _this5.createMetricLabel(r.map, target);
+              metricLabel = _this3.createMetricLabel(r.map, target);
               result[metricLabel] = result[metricLabel] || [];
               result[metricLabel].push([parseFloat(r.map[valueField]), parseFloat(r.map[keyField] || defaultValue)]);
             });
@@ -580,11 +459,6 @@ System.register(['lodash', 'moment', 'angular', 'app/core/utils/datemath', 'app/
                 text: v
               };
             }));
-          }
-        }, {
-          key: 'calculateRetryWait',
-          value: function calculateRetryWait(initialWait, retryCount) {
-            return initialWait * Math.min(10, Math.pow(2, retryCount)) + Math.floor(Math.random() * 1000);
           }
         }]);
 
