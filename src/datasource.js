@@ -137,7 +137,7 @@ export class SumologicDatasource {
           return {
             data: responses.map((response, index) => {
               if (options.targets[index].format === 'time_series_records') {
-                return self.transformRecordsToTimeSeries(response, options.targets[index].format, options.range.to.valueOf());
+                return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
               }
               return data;
             }).flatten()
