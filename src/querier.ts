@@ -280,6 +280,7 @@ export class SumologicQuerier {
                     return err;
                 });
             } else {
+                console.error(err);
                 return Promise.reject(err);
             }
         });
