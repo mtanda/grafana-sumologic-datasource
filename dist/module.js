@@ -27997,13 +27997,7 @@ var SumologicDatasource = /** @class */function () {
                     params.query = params.query.replace(/\|/, filterQuery + ' |');
                 }
             }
-            return _this.logQuery(params, target.format, true).do(function (x) {
-                console.log('Do Next:', x);
-            }, function (err) {
-                console.log('Do Error:', err);
-            }, function () {
-                console.log('Do Completed');
-            }).mergeMap(function (value) {
+            return _this.logQuery(params, target.format, true).mergeMap(function (value) {
                 return value;
             }).scan(function (acc, one) {
                 acc.fields = one.fields;
@@ -28622,7 +28616,14 @@ var SumologicQuerier = /** @class */function () {
                         }
                     }
                     if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors) || !_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
-                        return Promise.reject({ message: _this.status.data.pendingErrors.concat(_this.status.data.pendingWarnings).join('\n') });
+                        var message = '';
+                        if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors)) {
+                            message += 'Error:\n' + _this.status.data.pendingErrors.join('\n') + '\n';
+                        }
+                        if (!_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
+                            message += 'Warning:\n' + _this.status.data.pendingWarnings.join('\n');
+                        }
+                        return Promise.reject({ message: message });
                     }
                     return _this.transition('REQUEST_RESULTS');
                 }).catch(function (err) {
