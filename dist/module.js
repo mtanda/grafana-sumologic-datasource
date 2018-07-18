@@ -28787,6 +28787,7 @@ var SumologicQuerier = /** @class */function () {
                     return err;
                 });
             } else {
+                console.error(err);
                 return Promise.reject(err);
             }
         });
