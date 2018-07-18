@@ -28780,6 +28780,9 @@ var SumologicQuerier = /** @class */function () {
                     return _this.delay(function () {
                         return _this.backendSrv.datasourceRequest(options);
                     }, _this.calculateRetryWait(1000, retryCount));
+                }).catch(function (err) {
+                    console.log('rate limit exceeded');
+                    return err;
                 });
             } else {
                 return Promise.reject(err);
