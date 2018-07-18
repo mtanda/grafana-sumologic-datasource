@@ -75,6 +75,7 @@ export class SumologicQuerier {
         if (this.job) {
             let now = new Date();
             if (now.valueOf() - this.startTime.valueOf() > (this.timeoutSec * 1000)) {
+                console.error('timeout');
                 return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
                     return Promise.reject({ message: 'timeout' });
                 });
@@ -143,6 +144,7 @@ export class SumologicQuerier {
         if (this.job) {
             let now = new Date();
             if (now.valueOf() - this.startTime.valueOf() > (this.timeoutSec * 1000)) {
+                console.error('timeout');
                 return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
                     return Promise.reject({ message: 'timeout' });
                 });
@@ -274,7 +276,7 @@ export class SumologicQuerier {
                         return this.backendSrv.datasourceRequest(options);
                     }, this.calculateRetryWait(1000, retryCount));
                 }).catch((err) => {
-                    console.log('rate limit exceeded');
+                    console.error('rate limit exceeded');
                     return err;
                 });
             } else {
