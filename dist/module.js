@@ -28528,6 +28528,8 @@ var _lodash2 = _interopRequireDefault(_lodash);
 
 var _rxjs = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/Rx.js");
 
+__webpack_require__(/*! rxjs/add/observable/empty */ "../node_modules/rxjs/add/observable/empty.js");
+
 __webpack_require__(/*! rxjs/add/observable/from */ "../node_modules/rxjs/add/observable/from.js");
 
 __webpack_require__(/*! rxjs/add/observable/defer */ "../node_modules/rxjs/add/observable/defer.js");
@@ -28704,6 +28706,9 @@ var SumologicQuerier = /** @class */function () {
             case 'REQUEST_RESULTS':
                 if (this.format === 'time_series_records' || this.format === 'records') {
                     var limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
+                    if (limit === 0) {
+                        return _rxjs.Observable.empty();
+                    }
                     return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit).then(function (response) {
                         _this.offset += response.data.records.length;
                         if (_this.status.data.state === 'DONE GATHERING RESULTS' || _this.offset >= _this.maximumOffset) {
@@ -28717,6 +28722,9 @@ var SumologicQuerier = /** @class */function () {
                     });
                 } else if (this.format === 'messages') {
                     var limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
+                    if (limit === 0) {
+                        return _rxjs.Observable.empty();
+                    }
                     return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit).then(function (response) {
                         _this.offset += response.data.messages.length;
                         if (_this.status.data.state === 'DONE GATHERING RESULTS' || _this.offset >= _this.maximumOffset) {
