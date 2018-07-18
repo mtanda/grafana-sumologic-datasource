@@ -3,13 +3,14 @@ const ngAnnotatePlugin = require('ng-annotate-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 
 var conf = baseWebpackConfig;
-conf.mode = 'production';
+//conf.mode = 'production';
+conf.mode = 'development';
 
 conf.plugins.push(new ngAnnotatePlugin());
-conf.plugins.push(
-  new UglifyJSPlugin({
-  sourceMap: true,
-  })
-);
+//conf.plugins.push(
+//  new UglifyJSPlugin({
+//    sourceMap: true,
+//  })
+//);
 
 module.exports = conf;
