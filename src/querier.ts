@@ -273,6 +273,9 @@ export class SumologicQuerier {
                     return this.delay(() => {
                         return this.backendSrv.datasourceRequest(options);
                     }, this.calculateRetryWait(1000, retryCount));
+                }).catch((err) => {
+                    console.log('rate limit exceeded');
+                    return err;
                 });
             } else {
                 return Promise.reject(err);
