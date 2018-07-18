@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { Observable } from 'rxjs';
+import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/operator/concat';
@@ -195,6 +196,9 @@ export class SumologicQuerier {
             case 'REQUEST_RESULTS':
                 if (this.format === 'time_series_records' || this.format === 'records') {
                     let limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
+                    if (limit === 0) {
+                        return Observable.empty();
+                    }
                     return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit).then((response) => {
                         this.offset += response.data.records.length;
                         if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
@@ -209,6 +213,9 @@ export class SumologicQuerier {
                     });
                 } else if (this.format === 'messages') {
                     let limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
+                    if (limit === 0) {
+                        return Observable.empty();
+                    }
                     return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit).then((response) => {
                         this.offset += response.data.messages.length;
                         if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
