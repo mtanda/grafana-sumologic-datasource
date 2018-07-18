@@ -93,6 +93,11 @@ export class SumologicDatasource {
           }
         }
         return this.logQuery(params, target.format, true)
+          .do(
+            (x) => { console.log('Do Next:', x); },
+            (err) => { console.log('Do Error:', err); },
+            () => { console.log('Do Completed'); }
+          )
           .mergeMap(value => value)
           .scan((acc, one) => {
             acc.fields = one.fields;
