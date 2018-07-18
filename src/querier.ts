@@ -101,7 +101,14 @@ export class SumologicQuerier {
                     }
 
                     if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
-                        return Promise.reject({ message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') });
+                        let message = '';
+                        if (!_.isEmpty(this.status.data.pendingErrors)) {
+                            message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
+                        }
+                        if (!_.isEmpty(this.status.data.pendingWarnings)) {
+                            message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
+                        }
+                        return Promise.reject({ message: message });
                     }
                     return this.transition('REQUEST_RESULTS');
                 }).catch((err) => {
