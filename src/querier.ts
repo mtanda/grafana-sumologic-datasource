@@ -6,6 +6,22 @@ import 'rxjs/add/operator/concat';
 import 'rxjs/add/operator/mergeMap';
 
 export class SumologicQuerier {
+    params: any;
+    format: string;
+    timeoutSec: number;
+    useObservable: boolean;
+    datasource: any;
+    backendSrv: any;
+    retryCount: number;
+    offset: number;
+    maximumOffset: number;
+    startTime: Date;
+    state: string;
+    job: any;
+    status: any;
+    messageCount: number;
+    recordCount: number;
+
     constructor(params, format, timeoutSec, useObservable, datasource, backendSrv) {
         this.params = params;
         this.format = format;
@@ -57,7 +73,7 @@ export class SumologicQuerier {
     loop() {
         if (this.job) {
             let now = new Date();
-            if (now - this.startTime > (this.timeoutSec * 1000)) {
+            if (now.valueOf() - this.startTime.valueOf() > (this.timeoutSec * 1000)) {
                 return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
                     return Promise.reject({ message: 'timeout' });
                 });
@@ -125,7 +141,7 @@ export class SumologicQuerier {
     loopForObservable() {
         if (this.job) {
             let now = new Date();
-            if (now - this.startTime > (this.timeoutSec * 1000)) {
+            if (now.valueOf() - this.startTime.valueOf() > (this.timeoutSec * 1000)) {
                 return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
                     return Promise.reject({ message: 'timeout' });
                 });
@@ -143,7 +159,7 @@ export class SumologicQuerier {
                 return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then((status) => {
                     this.status = status;
                     let prevMessageCount = this.messageCount;
-                    let prevRecordCount = this.RecordCount;
+                    let prevRecordCount = this.recordCount;
                     this.messageCount = this.status.data.messageCount;
                     this.recordCount = this.status.data.recordCount;
 
@@ -188,7 +204,7 @@ export class SumologicQuerier {
                             .concat(
                                 Observable.defer(() => {
                                     return this.transition('REQUEST_STATUS');
-                                }).mergeMap(value => value)
+                                }).mergeMap((value: any) => value)
                             );
                     });
                 } else if (this.format === 'messages') {
@@ -202,7 +218,7 @@ export class SumologicQuerier {
                             .concat(
                                 Observable.defer(() => {
                                     return this.transition('REQUEST_STATUS');
-                                }).mergeMap(value => value)
+                                }).mergeMap((value: any) => value)
                             );
                     });
                 } else {
@@ -212,19 +228,20 @@ export class SumologicQuerier {
         }
     }
 
-    doRequest(method, path, params) {
+    doRequest(method, path, params = {}) {
         if (this.datasource.token === 0) {
             return this.delay(() => {
                 return this.doRequest(method, path, params);
             }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
         }
 
-        let options = {
+        let options: any = {
             method: method,
             url: this.datasource.url + path,
             data: params,
             headers: {},
-            inspect: { type: 'sumologic' }
+            inspect: { type: 'sumologic' },
+            withCredentials: false
         };
 
         if (this.datasource.basicAuth || this.datasource.withCredentials) {

@@ -1,4 +1,3 @@
-import 'angular';
 import './query_parameter_ctrl';
 import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import './mode-sumologic';

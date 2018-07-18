@@ -10,6 +10,22 @@ import 'rxjs/add/operator/mergeMap';
 
 
 export class SumologicDatasource {
+  type: string;
+  name: string;
+  url: string;
+  basicAuth: boolean;
+  withCredentials: boolean;
+  timeoutSec: number;
+  $q: any;
+  backendSrv: any;
+  templateSrv: any;
+  timeSrv: any;
+  fieldIndex: any;
+  MAX_AVAILABLE_TOKEN: number;
+  token: number;
+  tokenTimer: any;
+  excludeFieldList: any;
+
   constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
@@ -51,7 +67,7 @@ export class SumologicDatasource {
       .filter((target) => {
         return !target.hide && target.query;
       })
-      .map((target) => {
+      .map((target: any) => {
         let params = {
           query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
           from: this.convertTime(options.range.from, false),
@@ -135,12 +151,12 @@ export class SumologicDatasource {
           return { data: [self.transformDataToTable(tableResponses)] };
         } else {
           return {
-            data: responses.map((response, index) => {
+            data: _.flatten(responses.map((response, index) => {
               if (options.targets[index].format === 'time_series_records') {
                 return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
               }
-              return data;
-            }).flatten()
+              return response;
+            }))
           };
         }
       });
@@ -225,7 +241,7 @@ export class SumologicDatasource {
     });
   }
 
-  logQuery(params, format, useObservable) {
+  logQuery(params, format, useObservable): any {
     let querier = new SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
     return querier.getResult();
   }
@@ -253,7 +269,7 @@ export class SumologicDatasource {
     // rows
     data.forEach((d) => {
       for (let r of d[type]) {
-        let row = [];
+        let row: any[] = [];
         for (let key of fields) {
           row.push(r.map[key] || '');
         }

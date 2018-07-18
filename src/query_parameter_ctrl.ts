@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import angular from 'angular';
 
 angular.module('grafana.directives').directive('sumologicQueryParameter', () => {
   return {
@@ -35,7 +36,7 @@ angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', 
     }
   };
 
-  $scope.getDefaultFormat = function() {
+  $scope.getDefaultFormat = function () {
     if (this.panelType === 'table') {
       return 'records';
     }
