@@ -27997,7 +27997,13 @@ var SumologicDatasource = /** @class */function () {
                     params.query = params.query.replace(/\|/, filterQuery + ' |');
                 }
             }
-            return _this.logQuery(params, target.format, true).mergeMap(function (value) {
+            return _this.logQuery(params, target.format, true).do(function (x) {
+                console.log('Do Next:', x);
+            }, function (err) {
+                console.log('Do Error:', err);
+            }, function () {
+                console.log('Do Completed');
+            }).mergeMap(function (value) {
                 return value;
             }).scan(function (acc, one) {
                 acc.fields = one.fields;
