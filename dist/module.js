@@ -28592,6 +28592,7 @@ var SumologicQuerier = /** @class */function () {
         if (this.job) {
             var now = new Date();
             if (now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000) {
+                console.error('timeout');
                 return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then(function (result) {
                     return Promise.reject({ message: 'timeout' });
                 });
@@ -28658,6 +28659,7 @@ var SumologicQuerier = /** @class */function () {
         if (this.job) {
             var now = new Date();
             if (now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000) {
+                console.error('timeout');
                 return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then(function (result) {
                     return Promise.reject({ message: 'timeout' });
                 });
@@ -28781,7 +28783,7 @@ var SumologicQuerier = /** @class */function () {
                         return _this.backendSrv.datasourceRequest(options);
                     }, _this.calculateRetryWait(1000, retryCount));
                 }).catch(function (err) {
-                    console.log('rate limit exceeded');
+                    console.error('rate limit exceeded');
                     return err;
                 });
             } else {
