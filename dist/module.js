@@ -27847,25 +27847,27 @@ module.exports = g;
 
 /***/ }),
 
-/***/ "./annotations_query_ctrl.js":
+/***/ "./annotations_query_ctrl.ts":
 /*!***********************************!*\
-  !*** ./annotations_query_ctrl.js ***!
+  !*** ./annotations_query_ctrl.ts ***!
   \***********************************/
-/*! exports provided: SumologicAnnotationsQueryCtrl */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SumologicAnnotationsQueryCtrl", function() { return SumologicAnnotationsQueryCtrl; });
-class SumologicAnnotationsQueryCtrl {
 
-  constructor($scope, $injector) {
-    this.scope = $scope;
-  }
-}
 
-SumologicAnnotationsQueryCtrl.templateUrl = 'partials/annotations.editor.html';
-
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var SumologicAnnotationsQueryCtrl = /** @class */function () {
+    function SumologicAnnotationsQueryCtrl($scope, $injector) {
+        this.scope = $scope;
+    }
+    SumologicAnnotationsQueryCtrl.templateUrl = 'partials/annotations.editor.html';
+    return SumologicAnnotationsQueryCtrl;
+}();
+exports.SumologicAnnotationsQueryCtrl = SumologicAnnotationsQueryCtrl;
 
 /***/ }),
 
@@ -27893,402 +27895,365 @@ exports.SumologicConfigCtrl = SumologicConfigCtrl;
 
 /***/ }),
 
-/***/ "./datasource.js":
+/***/ "./datasource.ts":
 /*!***********************!*\
-  !*** ./datasource.js ***!
+  !*** ./datasource.ts ***!
   \***********************/
-/*! exports provided: SumologicDatasource */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SumologicDatasource", function() { return SumologicDatasource; });
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "lodash");
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var grafana_app_core_utils_datemath__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! grafana/app/core/utils/datemath */ "grafana/app/core/utils/datemath");
-/* harmony import */ var grafana_app_core_utils_datemath__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(grafana_app_core_utils_datemath__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var grafana_app_core_table_model__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! grafana/app/core/table_model */ "grafana/app/core/table_model");
-/* harmony import */ var grafana_app_core_table_model__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(grafana_app_core_table_model__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _querier__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./querier */ "./querier.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/Rx.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(rxjs__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var rxjs_add_observable_combineLatest__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! rxjs/add/observable/combineLatest */ "../node_modules/rxjs/add/observable/combineLatest.js");
-/* harmony import */ var rxjs_add_observable_combineLatest__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_observable_combineLatest__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var rxjs_add_operator_map__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! rxjs/add/operator/map */ "../node_modules/rxjs/add/operator/map.js");
-/* harmony import */ var rxjs_add_operator_map__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_operator_map__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var rxjs_add_operator_scan__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! rxjs/add/operator/scan */ "../node_modules/rxjs/add/operator/scan.js");
-/* harmony import */ var rxjs_add_operator_scan__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_operator_scan__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var rxjs_add_operator_mergeMap__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/operator/mergeMap.js");
-/* harmony import */ var rxjs_add_operator_mergeMap__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_operator_mergeMap__WEBPACK_IMPORTED_MODULE_8__);
 
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.SumologicDatasource = undefined;
 
+var _lodash = __webpack_require__(/*! lodash */ "lodash");
 
+var _lodash2 = _interopRequireDefault(_lodash);
 
+var _datemath = __webpack_require__(/*! grafana/app/core/utils/datemath */ "grafana/app/core/utils/datemath");
 
+var _datemath2 = _interopRequireDefault(_datemath);
 
+var _table_model = __webpack_require__(/*! grafana/app/core/table_model */ "grafana/app/core/table_model");
 
+var _table_model2 = _interopRequireDefault(_table_model);
 
+var _querier = __webpack_require__(/*! ./querier */ "./querier.ts");
 
+var _rxjs = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/Rx.js");
 
-class SumologicDatasource {
-  constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
-    this.type = instanceSettings.type;
-    this.name = instanceSettings.name;
-    this.url = instanceSettings.url;
-    this.basicAuth = instanceSettings.basicAuth;
-    this.withCredentials = instanceSettings.withCredentials;
-    this.timeoutSec = instanceSettings.jsonData.timeout || 30;
-    this.$q = $q;
-    this.backendSrv = backendSrv;
-    this.templateSrv = templateSrv;
-    this.timeSrv = timeSrv;
-    this.fieldIndex = {
-      tagKeys: new Set(),
-      tagValues: {}
-    };
-    // Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
-    this.MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
-    this.token = this.MAX_AVAILABLE_TOKEN;
-    this.tokenTimer = null;
-    this.excludeFieldList = [
-      '_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime',
-      '_size', '_timeslice', 'processing_time_ms'
-    ];
-  }
+__webpack_require__(/*! rxjs/add/observable/combineLatest */ "../node_modules/rxjs/add/observable/combineLatest.js");
 
-  provideToken() {
-    if (this.token < this.MAX_AVAILABLE_TOKEN) {
-      this.token += 1;
-      if (this.token === this.MAX_AVAILABLE_TOKEN) {
-        clearInterval(this.tokenTimer);
-        this.tokenTimer = null;
-      }
-    }
-  }
+__webpack_require__(/*! rxjs/add/operator/map */ "../node_modules/rxjs/add/operator/map.js");
 
-  query(options) {
-    let self = this;
-    let queries = lodash__WEBPACK_IMPORTED_MODULE_0___default.a.chain(options.targets)
-      .filter((target) => {
-        return !target.hide && target.query;
-      })
-      .map((target) => {
-        let params = {
-          query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
-          from: this.convertTime(options.range.from, false),
-          to: this.convertTime(options.range.to, true),
-          timeZone: 'Etc/UTC'
-        };
-        let adhocFilters = this.templateSrv.getAdhocFilters(this.name);
-        if (adhocFilters.length > 0) {
-          let filterQuery = ' | where ' + adhocFilters.map(f => {
-            switch (f.operator) {
-              case '=~':
-                return f.key + ' ' + 'matches' + ' "' + f.value + '"';
-              case '!~':
-                return '!(' + f.key + ' ' + 'matches' + ' "' + f.value + '"' + ')';
-              default:
-                return f.key + ' ' + f.operator + ' "' + f.value + '"';
-            }
-          }).join(' and ');
-          if (params.query.indexOf('|') === -1) {
-            params.query += filterQuery;
-          } else {
-            params.query = params.query.replace(/\|/, filterQuery + ' |');
-          }
-        }
-        return this.logQuery(params, target.format, true)
-          .mergeMap(value => value)
-          .scan((acc, one) => {
-            acc.fields = one.fields;
-            if (one.records) {
-              acc.records = (acc.records || []).concat(one.records);
-            } else if (one.messages) {
-              acc.messages = (acc.messages || []).concat(one.messages);
-            }
-            return acc;
-          }, {});
-      }).value();
-    return rxjs__WEBPACK_IMPORTED_MODULE_4__["Observable"]
-      .combineLatest(queries)
-      .map((responses) => {
-        responses = responses.filter((r) => { return !lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(r); });
+__webpack_require__(/*! rxjs/add/operator/scan */ "../node_modules/rxjs/add/operator/scan.js");
 
-        if (this.hasAdhocFilter()) {
-          this.fieldIndex = {
+__webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/operator/mergeMap.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var SumologicDatasource = /** @class */function () {
+    function SumologicDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
+        this.type = instanceSettings.type;
+        this.name = instanceSettings.name;
+        this.url = instanceSettings.url;
+        this.basicAuth = instanceSettings.basicAuth;
+        this.withCredentials = instanceSettings.withCredentials;
+        this.timeoutSec = instanceSettings.jsonData.timeout || 30;
+        this.$q = $q;
+        this.backendSrv = backendSrv;
+        this.templateSrv = templateSrv;
+        this.timeSrv = timeSrv;
+        this.fieldIndex = {
             tagKeys: new Set(),
             tagValues: {}
-          };
-
-          // build fieldIndex
-          responses.forEach(r => {
-            r.fields.map(f => {
-              return f.name;
-            }).filter(name => {
-              return !this.excludeFieldList.includes(name);
-            }).forEach(name => {
-              this.fieldIndex.tagKeys.add(name);
-            });
-          });
-
-          responses.forEach(r => {
-            (r.records || r.messages).forEach(d => {
-              Object.keys(d.map).filter(tagKey => {
-                return !this.excludeFieldList.includes(tagKey);
-              }).forEach(tagKey => {
-                if (!this.fieldIndex.tagValues[tagKey]) {
-                  this.fieldIndex.tagValues[tagKey] = new Set();
-                }
-                this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
-              });
-            });
-          });
-        }
-
-        let tableResponses = lodash__WEBPACK_IMPORTED_MODULE_0___default.a.chain(responses)
-          .filter((response, index) => {
-            return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-          })
-          .flatten()
-          .value();
-
-        if (tableResponses.length > 0) {
-          return { data: [self.transformDataToTable(tableResponses)] };
-        } else {
-          return {
-            data: responses.map((response, index) => {
-              if (options.targets[index].format === 'time_series_records') {
-                return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
-              }
-              return data;
-            }).flatten()
-          };
-        }
-      });
-  }
-
-  metricFindQuery(query) {
-    let range = this.timeSrv.timeRange();
-
-    let recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
-    if (recordValuesQuery) {
-      let recordKey = recordValuesQuery[1].toLowerCase();
-      let query = recordValuesQuery[2];
-      let params = {
-        query: this.templateSrv.replace(this.stripComment(query)),
-        from: String(this.convertTime(range.from, false)),
-        to: String(this.convertTime(range.to, true)),
-        timeZone: 'Etc/UTC'
-      };
-      return this.logQuery(params, 'records', false).then((result) => {
-        if (lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(result)) {
-          return [];
-        }
-        return result.records.map((r) => {
-          return {
-            text: r.map[recordKey],
-            value: r.map[recordKey]
-          };
-        })
-      });
-    }
-  }
-
-  annotationQuery(options) {
-    let annotation = options.annotation;
-    let query = annotation.query || '';
-    let tagKeys = annotation.tagKeys || '';
-    tagKeys = tagKeys.split(',');
-    let titleFormat = annotation.titleFormat || '';
-    let textFormat = annotation.textFormat || '';
-
-    if (!query) { return Promise.resolve([]); }
-
-    let params = {
-      query: this.templateSrv.replace(this.stripComment(query)),
-      from: String(this.convertTime(options.range.from, false)),
-      to: String(this.convertTime(options.range.to, true)),
-      timeZone: 'Etc/UTC'
-    };
-    return this.logQuery(params, 'messages', false).then((result) => {
-      if (lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(result)) {
-        return [];
-      }
-
-      let eventList = result.messages.map((message) => {
-        let tags = lodash__WEBPACK_IMPORTED_MODULE_0___default.a.chain(message.map)
-          .filter((v, k) => {
-            return lodash__WEBPACK_IMPORTED_MODULE_0___default.a.includes(tagKeys, k);
-          }).value();
-
-        return {
-          annotation: annotation,
-          time: parseInt(message.map['_messagetime'], 10),
-          title: this.renderTemplate(titleFormat, message.map),
-          tags: tags,
-          text: this.renderTemplate(textFormat, message.map)
         };
-      });
-
-      return eventList;
-    });
-  }
-
-  testDatasource() {
-    let params = {
-      query: '| count _sourceCategory',
-      from: (new Date()).getTime() - 10 * 60 * 1000,
-      to: (new Date()).getTime(),
-      timeZone: 'Etc/UTC'
-    };
-    return this.logQuery(params, 'records', false).then((response) => {
-      return { status: 'success', message: 'Data source is working', title: 'Success' };
-    });
-  }
-
-  logQuery(params, format, useObservable) {
-    let querier = new _querier__WEBPACK_IMPORTED_MODULE_3__["SumologicQuerier"](params, format, this.timeoutSec, useObservable, this, this.backendSrv);
-    return querier.getResult();
-  }
-
-  transformDataToTable(data) {
-    let table = new grafana_app_core_table_model__WEBPACK_IMPORTED_MODULE_2___default.a();
-
-    if (data.length === 0) {
-      return table;
+        // Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
+        this.MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
+        this.token = this.MAX_AVAILABLE_TOKEN;
+        this.tokenTimer = null;
+        this.excludeFieldList = ['_raw', '_collectorid', '_sourceid', '_messageid', '_messagecount', '_messagetime', '_receipttime', '_size', '_timeslice', 'processing_time_ms'];
     }
-
-    let type = data[0].records ? 'records' : 'messages';
-
-    let fields = lodash__WEBPACK_IMPORTED_MODULE_0___default.a.chain(data)
-      .map((d) => {
-        return lodash__WEBPACK_IMPORTED_MODULE_0___default.a.map(d.fields, 'name');
-      })
-      .flatten().uniq().value();
-
-    // columns
-    table.columns = fields.map((c) => {
-      return { text: c, filterable: true };
-    });
-
-    // rows
-    data.forEach((d) => {
-      for (let r of d[type]) {
-        let row = [];
-        for (let key of fields) {
-          row.push(r.map[key] || '');
+    SumologicDatasource.prototype.provideToken = function () {
+        if (this.token < this.MAX_AVAILABLE_TOKEN) {
+            this.token += 1;
+            if (this.token === this.MAX_AVAILABLE_TOKEN) {
+                clearInterval(this.tokenTimer);
+                this.tokenTimer = null;
+            }
         }
-        table.rows.push(row);
-      }
-    });
-
-    return table;
-  }
-
-  transformRecordsToTimeSeries(response, target, defaultValue) {
-    let metricLabel = '';
-    let dps = [];
-    let fields = response.fields;
-    let records = response.records;
-
-    if (records.length === 0) {
-      return { target: metricLabel, datapoints: dps };
-    }
-
-    let keyField = fields.find((f) => {
-      return f.fieldType != 'string' && f.keyField;
-    });
-    keyField = keyField ? keyField.name : '';
-    let valueField = fields.find((f) => {
-      return f.fieldType != 'string' && !f.keyField;
-    });
-    if (!valueField) {
-      return { target: metricLabel, datapoints: dps };
-    }
-    valueField = valueField.name;
-
-    let result = {};
-    records.sort((a, b) => {
-      if (keyField === '') {
-        return 0;
-      }
-      if (a.map[keyField] < b.map[keyField]) {
-        return -1;
-      } else if (a.map[keyField] > b.map[keyField]) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }).forEach((r) => {
-      metricLabel = this.createMetricLabel(r.map, target);
-      result[metricLabel] = result[metricLabel] || [];
-      result[metricLabel].push([parseFloat(r.map[valueField]), parseFloat(r.map[keyField] || defaultValue)]);
-    });
-
-    return lodash__WEBPACK_IMPORTED_MODULE_0___default.a.map(result, (v, k) => {
-      return { target: k, datapoints: v };
-    });
-  }
-
-  createMetricLabel(record, target) {
-    if (lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isUndefined(target) || lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(target.aliasFormat)) {
-      return '';
-    }
-
-    return this.renderTemplate(this.templateSrv.replace(target.aliasFormat), record) || '{}';
-  }
-
-  renderTemplate(aliasPattern, aliasData) {
-    var aliasRegex = /\{\{\s*(.+?)\s*\}\}/g;
-    return aliasPattern.replace(aliasRegex, function (match, g1) {
-      if (aliasData[g1]) {
-        return aliasData[g1];
-      }
-      return g1;
-    });
-  }
-
-  stripComment(query) {
-    return query.split("\n").map(q => {
-      return q.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');
-    }).filter(q => {
-      return q !== "";
-    }).join("\n");
-  }
-
-  convertTime(date, roundUp) {
-    if (lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isString(date)) {
-      date = grafana_app_core_utils_datemath__WEBPACK_IMPORTED_MODULE_1___default.a.parse(date, roundUp);
-    }
-    return date.valueOf();
-  }
-
-  hasAdhocFilter() {
-    return lodash__WEBPACK_IMPORTED_MODULE_0___default.a.some(this.templateSrv.variables, variable => {
-      return variable.type === 'adhoc';
-    });
-  }
-
-  getTagKeys(options) {
-    return Promise.resolve(Array.from(this.fieldIndex.tagKeys).map(k => {
-      return {
-        type: 'key',
-        text: k
-      };
-    }));
-  }
-
-  getTagValues(options) {
-    return Promise.resolve(Array.from(this.fieldIndex.tagValues[options.key]).map(v => {
-      return {
-        type: 'value',
-        text: v
-      };
-    }));
-  }
-}
-
+    };
+    SumologicDatasource.prototype.query = function (options) {
+        var _this = this;
+        var self = this;
+        var queries = _lodash2.default.chain(options.targets).filter(function (target) {
+            return !target.hide && target.query;
+        }).map(function (target) {
+            var params = {
+                query: _this.templateSrv.replace(_this.stripComment(target.query), options.scopedVars),
+                from: _this.convertTime(options.range.from, false),
+                to: _this.convertTime(options.range.to, true),
+                timeZone: 'Etc/UTC'
+            };
+            var adhocFilters = _this.templateSrv.getAdhocFilters(_this.name);
+            if (adhocFilters.length > 0) {
+                var filterQuery = ' | where ' + adhocFilters.map(function (f) {
+                    switch (f.operator) {
+                        case '=~':
+                            return f.key + ' ' + 'matches' + ' "' + f.value + '"';
+                        case '!~':
+                            return '!(' + f.key + ' ' + 'matches' + ' "' + f.value + '"' + ')';
+                        default:
+                            return f.key + ' ' + f.operator + ' "' + f.value + '"';
+                    }
+                }).join(' and ');
+                if (params.query.indexOf('|') === -1) {
+                    params.query += filterQuery;
+                } else {
+                    params.query = params.query.replace(/\|/, filterQuery + ' |');
+                }
+            }
+            return _this.logQuery(params, target.format, true).mergeMap(function (value) {
+                return value;
+            }).scan(function (acc, one) {
+                acc.fields = one.fields;
+                if (one.records) {
+                    acc.records = (acc.records || []).concat(one.records);
+                } else if (one.messages) {
+                    acc.messages = (acc.messages || []).concat(one.messages);
+                }
+                return acc;
+            }, {});
+        }).value();
+        return _rxjs.Observable.combineLatest(queries).map(function (responses) {
+            responses = responses.filter(function (r) {
+                return !_lodash2.default.isEmpty(r);
+            });
+            if (_this.hasAdhocFilter()) {
+                _this.fieldIndex = {
+                    tagKeys: new Set(),
+                    tagValues: {}
+                };
+                // build fieldIndex
+                responses.forEach(function (r) {
+                    r.fields.map(function (f) {
+                        return f.name;
+                    }).filter(function (name) {
+                        return !_this.excludeFieldList.includes(name);
+                    }).forEach(function (name) {
+                        _this.fieldIndex.tagKeys.add(name);
+                    });
+                });
+                responses.forEach(function (r) {
+                    (r.records || r.messages).forEach(function (d) {
+                        Object.keys(d.map).filter(function (tagKey) {
+                            return !_this.excludeFieldList.includes(tagKey);
+                        }).forEach(function (tagKey) {
+                            if (!_this.fieldIndex.tagValues[tagKey]) {
+                                _this.fieldIndex.tagValues[tagKey] = new Set();
+                            }
+                            _this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                        });
+                    });
+                });
+            }
+            var tableResponses = _lodash2.default.chain(responses).filter(function (response, index) {
+                return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+            }).flatten().value();
+            if (tableResponses.length > 0) {
+                return { data: [self.transformDataToTable(tableResponses)] };
+            } else {
+                return {
+                    data: _lodash2.default.flatten(responses.map(function (response, index) {
+                        if (options.targets[index].format === 'time_series_records') {
+                            return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
+                        }
+                        return response;
+                    }))
+                };
+            }
+        });
+    };
+    SumologicDatasource.prototype.metricFindQuery = function (query) {
+        var range = this.timeSrv.timeRange();
+        var recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
+        if (recordValuesQuery) {
+            var recordKey_1 = recordValuesQuery[1].toLowerCase();
+            var query_1 = recordValuesQuery[2];
+            var params = {
+                query: this.templateSrv.replace(this.stripComment(query_1)),
+                from: String(this.convertTime(range.from, false)),
+                to: String(this.convertTime(range.to, true)),
+                timeZone: 'Etc/UTC'
+            };
+            return this.logQuery(params, 'records', false).then(function (result) {
+                if (_lodash2.default.isEmpty(result)) {
+                    return [];
+                }
+                return result.records.map(function (r) {
+                    return {
+                        text: r.map[recordKey_1],
+                        value: r.map[recordKey_1]
+                    };
+                });
+            });
+        }
+    };
+    SumologicDatasource.prototype.annotationQuery = function (options) {
+        var _this = this;
+        var annotation = options.annotation;
+        var query = annotation.query || '';
+        var tagKeys = annotation.tagKeys || '';
+        tagKeys = tagKeys.split(',');
+        var titleFormat = annotation.titleFormat || '';
+        var textFormat = annotation.textFormat || '';
+        if (!query) {
+            return Promise.resolve([]);
+        }
+        var params = {
+            query: this.templateSrv.replace(this.stripComment(query)),
+            from: String(this.convertTime(options.range.from, false)),
+            to: String(this.convertTime(options.range.to, true)),
+            timeZone: 'Etc/UTC'
+        };
+        return this.logQuery(params, 'messages', false).then(function (result) {
+            if (_lodash2.default.isEmpty(result)) {
+                return [];
+            }
+            var eventList = result.messages.map(function (message) {
+                var tags = _lodash2.default.chain(message.map).filter(function (v, k) {
+                    return _lodash2.default.includes(tagKeys, k);
+                }).value();
+                return {
+                    annotation: annotation,
+                    time: parseInt(message.map['_messagetime'], 10),
+                    title: _this.renderTemplate(titleFormat, message.map),
+                    tags: tags,
+                    text: _this.renderTemplate(textFormat, message.map)
+                };
+            });
+            return eventList;
+        });
+    };
+    SumologicDatasource.prototype.testDatasource = function () {
+        var params = {
+            query: '| count _sourceCategory',
+            from: new Date().getTime() - 10 * 60 * 1000,
+            to: new Date().getTime(),
+            timeZone: 'Etc/UTC'
+        };
+        return this.logQuery(params, 'records', false).then(function (response) {
+            return { status: 'success', message: 'Data source is working', title: 'Success' };
+        });
+    };
+    SumologicDatasource.prototype.logQuery = function (params, format, useObservable) {
+        var querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
+        return querier.getResult();
+    };
+    SumologicDatasource.prototype.transformDataToTable = function (data) {
+        var table = new _table_model2.default();
+        if (data.length === 0) {
+            return table;
+        }
+        var type = data[0].records ? 'records' : 'messages';
+        var fields = _lodash2.default.chain(data).map(function (d) {
+            return _lodash2.default.map(d.fields, 'name');
+        }).flatten().uniq().value();
+        // columns
+        table.columns = fields.map(function (c) {
+            return { text: c, filterable: true };
+        });
+        // rows
+        data.forEach(function (d) {
+            for (var _i = 0, _a = d[type]; _i < _a.length; _i++) {
+                var r = _a[_i];
+                var row = [];
+                for (var _b = 0, fields_1 = fields; _b < fields_1.length; _b++) {
+                    var key = fields_1[_b];
+                    row.push(r.map[key] || '');
+                }
+                table.rows.push(row);
+            }
+        });
+        return table;
+    };
+    SumologicDatasource.prototype.transformRecordsToTimeSeries = function (response, target, defaultValue) {
+        var _this = this;
+        var metricLabel = '';
+        var dps = [];
+        var fields = response.fields;
+        var records = response.records;
+        if (records.length === 0) {
+            return { target: metricLabel, datapoints: dps };
+        }
+        var keyField = fields.find(function (f) {
+            return f.fieldType != 'string' && f.keyField;
+        });
+        keyField = keyField ? keyField.name : '';
+        var valueField = fields.find(function (f) {
+            return f.fieldType != 'string' && !f.keyField;
+        });
+        if (!valueField) {
+            return { target: metricLabel, datapoints: dps };
+        }
+        valueField = valueField.name;
+        var result = {};
+        records.sort(function (a, b) {
+            if (keyField === '') {
+                return 0;
+            }
+            if (a.map[keyField] < b.map[keyField]) {
+                return -1;
+            } else if (a.map[keyField] > b.map[keyField]) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }).forEach(function (r) {
+            metricLabel = _this.createMetricLabel(r.map, target);
+            result[metricLabel] = result[metricLabel] || [];
+            result[metricLabel].push([parseFloat(r.map[valueField]), parseFloat(r.map[keyField] || defaultValue)]);
+        });
+        return _lodash2.default.map(result, function (v, k) {
+            return { target: k, datapoints: v };
+        });
+    };
+    SumologicDatasource.prototype.createMetricLabel = function (record, target) {
+        if (_lodash2.default.isUndefined(target) || _lodash2.default.isEmpty(target.aliasFormat)) {
+            return '';
+        }
+        return this.renderTemplate(this.templateSrv.replace(target.aliasFormat), record) || '{}';
+    };
+    SumologicDatasource.prototype.renderTemplate = function (aliasPattern, aliasData) {
+        var aliasRegex = /\{\{\s*(.+?)\s*\}\}/g;
+        return aliasPattern.replace(aliasRegex, function (match, g1) {
+            if (aliasData[g1]) {
+                return aliasData[g1];
+            }
+            return g1;
+        });
+    };
+    SumologicDatasource.prototype.stripComment = function (query) {
+        return query.split("\n").map(function (q) {
+            return q.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');
+        }).filter(function (q) {
+            return q !== "";
+        }).join("\n");
+    };
+    SumologicDatasource.prototype.convertTime = function (date, roundUp) {
+        if (_lodash2.default.isString(date)) {
+            date = _datemath2.default.parse(date, roundUp);
+        }
+        return date.valueOf();
+    };
+    SumologicDatasource.prototype.hasAdhocFilter = function () {
+        return _lodash2.default.some(this.templateSrv.variables, function (variable) {
+            return variable.type === 'adhoc';
+        });
+    };
+    SumologicDatasource.prototype.getTagKeys = function (options) {
+        return Promise.resolve(Array.from(this.fieldIndex.tagKeys).map(function (k) {
+            return {
+                type: 'key',
+                text: k
+            };
+        }));
+    };
+    SumologicDatasource.prototype.getTagValues = function (options) {
+        return Promise.resolve(Array.from(this.fieldIndex.tagValues[options.key]).map(function (v) {
+            return {
+                type: 'value',
+                text: v
+            };
+        }));
+    };
+    return SumologicDatasource;
+}();
+exports.SumologicDatasource = SumologicDatasource;
 
 /***/ }),
 
@@ -28527,11 +28492,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.AnnotationsQueryCtrl = exports.QueryCtrl = exports.ConfigCtrl = exports.Datasource = undefined;
 
-var _datasource = __webpack_require__(/*! ./datasource */ "./datasource.js");
+var _datasource = __webpack_require__(/*! ./datasource */ "./datasource.ts");
 
 var _query_ctrl = __webpack_require__(/*! ./query_ctrl */ "./query_ctrl.ts");
 
-var _annotations_query_ctrl = __webpack_require__(/*! ./annotations_query_ctrl */ "./annotations_query_ctrl.js");
+var _annotations_query_ctrl = __webpack_require__(/*! ./annotations_query_ctrl */ "./annotations_query_ctrl.ts");
 
 var _config_ctrl = __webpack_require__(/*! ./config_ctrl */ "./config_ctrl.ts");
 
@@ -28542,37 +28507,39 @@ exports.AnnotationsQueryCtrl = _annotations_query_ctrl.SumologicAnnotationsQuery
 
 /***/ }),
 
-/***/ "./querier.js":
+/***/ "./querier.ts":
 /*!********************!*\
-  !*** ./querier.js ***!
+  !*** ./querier.ts ***!
   \********************/
-/*! exports provided: SumologicQuerier */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SumologicQuerier", function() { return SumologicQuerier; });
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "lodash");
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/Rx.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(rxjs__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var rxjs_add_observable_from__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs/add/observable/from */ "../node_modules/rxjs/add/observable/from.js");
-/* harmony import */ var rxjs_add_observable_from__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_observable_from__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var rxjs_add_observable_defer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! rxjs/add/observable/defer */ "../node_modules/rxjs/add/observable/defer.js");
-/* harmony import */ var rxjs_add_observable_defer__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_observable_defer__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var rxjs_add_operator_concat__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! rxjs/add/operator/concat */ "../node_modules/rxjs/add/operator/concat.js");
-/* harmony import */ var rxjs_add_operator_concat__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_operator_concat__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var rxjs_add_operator_mergeMap__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/operator/mergeMap.js");
-/* harmony import */ var rxjs_add_operator_mergeMap__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(rxjs_add_operator_mergeMap__WEBPACK_IMPORTED_MODULE_5__);
 
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.SumologicQuerier = undefined;
 
+var _lodash = __webpack_require__(/*! lodash */ "lodash");
 
+var _lodash2 = _interopRequireDefault(_lodash);
 
+var _rxjs = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/Rx.js");
 
+__webpack_require__(/*! rxjs/add/observable/from */ "../node_modules/rxjs/add/observable/from.js");
 
-class SumologicQuerier {
-    constructor(params, format, timeoutSec, useObservable, datasource, backendSrv) {
+__webpack_require__(/*! rxjs/add/observable/defer */ "../node_modules/rxjs/add/observable/defer.js");
+
+__webpack_require__(/*! rxjs/add/operator/concat */ "../node_modules/rxjs/add/operator/concat.js");
+
+__webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/operator/mergeMap.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var SumologicQuerier = /** @class */function () {
+    function SumologicQuerier(params, format, timeoutSec, useObservable, datasource, backendSrv) {
         this.params = params;
         this.format = format;
         this.timeoutSec = timeoutSec;
@@ -28583,23 +28550,22 @@ class SumologicQuerier {
         this.offset = 0;
         this.maximumOffset = 10000;
     }
-
-    getResult() {
+    SumologicQuerier.prototype.getResult = function () {
+        var _this = this;
         this.startTime = new Date();
         if (!this.useObservable) {
-            return this.delay(() => {
-                return this.transition('CREATE_SEARCH_JOB');
+            return this.delay(function () {
+                return _this.transition('CREATE_SEARCH_JOB');
             }, Math.random() * 1000);
         } else {
-            return rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].defer(() => {
-                return this.delay(() => {
-                    return this.transition('CREATE_SEARCH_JOB');
+            return _rxjs.Observable.defer(function () {
+                return _this.delay(function () {
+                    return _this.transition('CREATE_SEARCH_JOB');
                 }, Math.random() * 1000);
             });
         }
-    }
-
-    transition(state) {
+    };
+    SumologicQuerier.prototype.transition = function (state) {
         this.state = state;
         this.retryCount = 0;
         if (!this.useObservable) {
@@ -28607,58 +28573,56 @@ class SumologicQuerier {
         } else {
             return this.loopForObservable();
         }
-    }
-
-    retry() {
+    };
+    SumologicQuerier.prototype.retry = function () {
+        var _this = this;
         this.retryCount += 1;
-        return this.delay(() => {
-            if (!this.useObservable) {
-                return this.loop();
+        return this.delay(function () {
+            if (!_this.useObservable) {
+                return _this.loop();
             } else {
-                return this.loopForObservable();
+                return _this.loopForObservable();
             }
         }, this.calculateRetryWait(1000, this.retryCount));
-    }
-
-    loop() {
+    };
+    SumologicQuerier.prototype.loop = function () {
+        var _this = this;
         if (this.job) {
-            let now = new Date();
-            if (now - this.startTime > (this.timeoutSec * 1000)) {
-                return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
+            var now = new Date();
+            if (now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000) {
+                return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then(function (result) {
                     return Promise.reject({ message: 'timeout' });
                 });
             }
         }
-
         switch (this.state) {
             case 'CREATE_SEARCH_JOB':
-                return this.doRequest('POST', '/v1/search/jobs', this.params).then((job) => {
-                    this.job = job;
-                    return this.transition('REQUEST_STATUS');
+                return this.doRequest('POST', '/v1/search/jobs', this.params).then(function (job) {
+                    _this.job = job;
+                    return _this.transition('REQUEST_STATUS');
                 });
                 break;
             case 'REQUEST_STATUS':
-                return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then((status) => {
-                    this.status = status;
-                    if (this.status.data.state !== 'DONE GATHERING RESULTS') {
-                        if (this.retryCount < 20) {
-                            return this.retry();
+                return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then(function (status) {
+                    _this.status = status;
+                    if (_this.status.data.state !== 'DONE GATHERING RESULTS') {
+                        if (_this.retryCount < 20) {
+                            return _this.retry();
                         } else {
                             return Promise.reject({ message: 'max retries exceeded' });
                         }
                     }
-
-                    if (!lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(this.status.data.pendingErrors) || !lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(this.status.data.pendingWarnings)) {
-                        return Promise.reject({ message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') });
+                    if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors) || !_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
+                        return Promise.reject({ message: _this.status.data.pendingErrors.concat(_this.status.data.pendingWarnings).join('\n') });
                     }
-                    return this.transition('REQUEST_RESULTS');
-                }).catch((err) => {
+                    return _this.transition('REQUEST_RESULTS');
+                }).catch(function (err) {
                     if (err.data && err.data.code && err.data.code === 'unauthorized') {
                         return Promise.reject(err);
                     }
                     // need to wait until job is created and registered
-                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                        return this.retry();
+                    if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                        return _this.retry();
                     } else {
                         return Promise.reject(err);
                     }
@@ -28669,16 +28633,16 @@ class SumologicQuerier {
                     if (this.status.data.recordCount === 0) {
                         return Promise.resolve([]);
                     }
-                    let limit = Math.min(this.maximumOffset, this.status.data.recordCount);
-                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit).then((response) => {
+                    var limit = Math.min(this.maximumOffset, this.status.data.recordCount);
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit).then(function (response) {
                         return response.data;
                     });
                 } else if (this.format === 'messages') {
                     if (this.status.data.messageCount === 0) {
                         return Promise.resolve([]);
                     }
-                    let limit = Math.min(this.maximumOffset, this.status.data.messageCount);
-                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit).then((response) => {
+                    var limit = Math.min(this.maximumOffset, this.status.data.messageCount);
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit).then(function (response) {
                         return response.data;
                     });
                 } else {
@@ -28686,57 +28650,52 @@ class SumologicQuerier {
                 }
                 break;
         }
-    }
-
-    loopForObservable() {
+    };
+    SumologicQuerier.prototype.loopForObservable = function () {
+        var _this = this;
         if (this.job) {
-            let now = new Date();
-            if (now - this.startTime > (this.timeoutSec * 1000)) {
-                return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then((result) => {
+            var now = new Date();
+            if (now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000) {
+                return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then(function (result) {
                     return Promise.reject({ message: 'timeout' });
                 });
             }
         }
-
         switch (this.state) {
             case 'CREATE_SEARCH_JOB':
-                return this.doRequest('POST', '/v1/search/jobs', this.params).then((job) => {
-                    this.job = job;
-                    return this.transition('REQUEST_STATUS');
+                return this.doRequest('POST', '/v1/search/jobs', this.params).then(function (job) {
+                    _this.job = job;
+                    return _this.transition('REQUEST_STATUS');
                 });
                 break;
             case 'REQUEST_STATUS':
-                return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then((status) => {
-                    this.status = status;
-                    let prevMessageCount = this.messageCount;
-                    let prevRecordCount = this.RecordCount;
-                    this.messageCount = this.status.data.messageCount;
-                    this.recordCount = this.status.data.recordCount;
-
-                    if (!lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(this.status.data.pendingErrors) || !lodash__WEBPACK_IMPORTED_MODULE_0___default.a.isEmpty(this.status.data.pendingWarnings)) {
-                        return Promise.reject({ message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') });
+                return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then(function (status) {
+                    _this.status = status;
+                    var prevMessageCount = _this.messageCount;
+                    var prevRecordCount = _this.recordCount;
+                    _this.messageCount = _this.status.data.messageCount;
+                    _this.recordCount = _this.status.data.recordCount;
+                    if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors) || !_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
+                        return Promise.reject({ message: _this.status.data.pendingErrors.concat(_this.status.data.pendingWarnings).join('\n') });
                     }
-
-                    if (this.status.data.state === 'DONE GATHERING RESULTS') {
-                        return this.transition('REQUEST_RESULTS');
+                    if (_this.status.data.state === 'DONE GATHERING RESULTS') {
+                        return _this.transition('REQUEST_RESULTS');
                     }
-
-                    if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
-                        return this.transition('REQUEST_RESULTS');
+                    if ((_this.format === 'time_series_records' || _this.format === 'records') && _this.recordCount > prevRecordCount) {
+                        return _this.transition('REQUEST_RESULTS');
                     }
-                    if (this.format === 'messages' && this.messageCount > prevMessageCount) {
-                        return this.transition('REQUEST_RESULTS');
+                    if (_this.format === 'messages' && _this.messageCount > prevMessageCount) {
+                        return _this.transition('REQUEST_RESULTS');
                     }
-
                     // wait for new result arrival
-                    return this.transition('REQUEST_STATUS');
-                }).catch((err) => {
+                    return _this.transition('REQUEST_STATUS');
+                }).catch(function (err) {
                     if (err.data && err.data.code && err.data.code === 'unauthorized') {
                         return Promise.reject(err);
                     }
                     // need to wait until job is created and registered
-                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                        return this.retry();
+                    if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                        return _this.retry();
                     } else {
                         return Promise.reject(err);
                     }
@@ -28744,55 +28703,55 @@ class SumologicQuerier {
                 break;
             case 'REQUEST_RESULTS':
                 if (this.format === 'time_series_records' || this.format === 'records') {
-                    let limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
-                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit).then((response) => {
-                        this.offset += response.data.records.length;
-                        if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-                            return rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].from([response.data]);
+                    var limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit).then(function (response) {
+                        _this.offset += response.data.records.length;
+                        if (_this.status.data.state === 'DONE GATHERING RESULTS' || _this.offset >= _this.maximumOffset) {
+                            return _rxjs.Observable.from([response.data]);
                         }
-                        return rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].from([response.data])
-                            .concat(
-                                rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].defer(() => {
-                                    return this.transition('REQUEST_STATUS');
-                                }).mergeMap(value => value)
-                            );
+                        return _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
+                            return _this.transition('REQUEST_STATUS');
+                        }).mergeMap(function (value) {
+                            return value;
+                        }));
                     });
                 } else if (this.format === 'messages') {
-                    let limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
-                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit).then((response) => {
-                        this.offset += response.data.messages.length;
-                        if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-                            return rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].from([response.data]);
+                    var limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
+                    return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit).then(function (response) {
+                        _this.offset += response.data.messages.length;
+                        if (_this.status.data.state === 'DONE GATHERING RESULTS' || _this.offset >= _this.maximumOffset) {
+                            return _rxjs.Observable.from([response.data]);
                         }
-                        return rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].from([response.data])
-                            .concat(
-                                rxjs__WEBPACK_IMPORTED_MODULE_1__["Observable"].defer(() => {
-                                    return this.transition('REQUEST_STATUS');
-                                }).mergeMap(value => value)
-                            );
+                        return _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
+                            return _this.transition('REQUEST_STATUS');
+                        }).mergeMap(function (value) {
+                            return value;
+                        }));
                     });
                 } else {
                     return Promise.reject({ message: 'unsupported type' });
                 }
                 break;
         }
-    }
-
-    doRequest(method, path, params) {
+    };
+    SumologicQuerier.prototype.doRequest = function (method, path, params) {
+        var _this = this;
+        if (params === void 0) {
+            params = {};
+        }
         if (this.datasource.token === 0) {
-            return this.delay(() => {
-                return this.doRequest(method, path, params);
+            return this.delay(function () {
+                return _this.doRequest(method, path, params);
             }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
         }
-
-        let options = {
+        var options = {
             method: method,
             url: this.datasource.url + path,
             data: params,
             headers: {},
-            inspect: { type: 'sumologic' }
+            inspect: { type: 'sumologic' },
+            withCredentials: false
         };
-
         if (this.datasource.basicAuth || this.datasource.withCredentials) {
             options.withCredentials = true;
         }
@@ -28800,52 +28759,51 @@ class SumologicQuerier {
             options.headers.Authorization = this.datasource.basicAuth;
         }
         options.headers['Content-Type'] = 'application/json';
-
         this.datasource.token--;
         if (this.datasource.tokenTimer === null) {
-            this.datasource.tokenTimer = setInterval(() => {
-                this.datasource.provideToken();
+            this.datasource.tokenTimer = setInterval(function () {
+                _this.datasource.provideToken();
             }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
         }
-
-        return this.backendSrv.datasourceRequest(options).catch((err) => {
+        return this.backendSrv.datasourceRequest(options).catch(function (err) {
             if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
-                this.datasource.token = 0;
-                return this.retryable(3, (retryCount) => {
-                    return this.delay(() => {
-                        return this.backendSrv.datasourceRequest(options);
-                    }, this.calculateRetryWait(1000, retryCount));
+                _this.datasource.token = 0;
+                return _this.retryable(3, function (retryCount) {
+                    return _this.delay(function () {
+                        return _this.backendSrv.datasourceRequest(options);
+                    }, _this.calculateRetryWait(1000, retryCount));
                 });
             } else {
                 return Promise.reject(err);
             }
         });
-    }
-
-    delay(func, wait) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
+    };
+    SumologicQuerier.prototype.delay = function (func, wait) {
+        return new Promise(function (resolve, reject) {
+            setTimeout(function () {
                 func().then(resolve, reject);
             }, wait);
         });
-    }
-
-    retryable(retryCount, func) {
-        let promise = Promise.reject({}).catch(() => func(retryCount));
-        for (let i = 0; i < retryCount; i++) {
-            ((i) => {
-                promise = promise.catch(err => func(i + 1));
+    };
+    SumologicQuerier.prototype.retryable = function (retryCount, func) {
+        var promise = Promise.reject({}).catch(function () {
+            return func(retryCount);
+        });
+        for (var i = 0; i < retryCount; i++) {
+            (function (i) {
+                promise = promise.catch(function (err) {
+                    return func(i + 1);
+                });
             })(i);
         }
         return promise;
-    }
-
-    calculateRetryWait(initialWait, retryCount) {
-        return initialWait * Math.min(10, Math.pow(2, retryCount)) +
-            Math.floor(Math.random() * 1000);
-    }
-}
-
+    };
+    SumologicQuerier.prototype.calculateRetryWait = function (initialWait, retryCount) {
+        return initialWait * Math.min(10, Math.pow(2, retryCount)) + Math.floor(Math.random() * 1000);
+    };
+    return SumologicQuerier;
+}();
+exports.SumologicQuerier = SumologicQuerier;
 
 /***/ }),
 
@@ -28864,9 +28822,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.SumologicQueryCtrl = undefined;
 
-__webpack_require__(/*! angular */ "angular");
-
-__webpack_require__(/*! ./query_parameter_ctrl */ "./query_parameter_ctrl.js");
+__webpack_require__(/*! ./query_parameter_ctrl */ "./query_parameter_ctrl.ts");
 
 var _sdk = __webpack_require__(/*! grafana/app/plugins/sdk */ "grafana/app/plugins/sdk");
 
@@ -28903,64 +28859,61 @@ exports.SumologicQueryCtrl = SumologicQueryCtrl;
 
 /***/ }),
 
-/***/ "./query_parameter_ctrl.js":
+/***/ "./query_parameter_ctrl.ts":
 /*!*********************************!*\
-  !*** ./query_parameter_ctrl.js ***!
+  !*** ./query_parameter_ctrl.ts ***!
   \*********************************/
-/*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "lodash");
-/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_0__);
 
 
-angular.module('grafana.directives').directive('sumologicQueryParameter', () => {
-  return {
-    templateUrl: 'public/plugins/mtanda-sumologic-datasource/partials/query.parameter.html',
-    controller: 'SumologicQueryParameterCtrl',
-    restrict: 'E',
-    scope: {
-      target: "=",
-      datasource: "=",
-      panelType: "=",
-      isLastQuery: "=",
-      onChange: "&",
-    }
-  };
+var _lodash = __webpack_require__(/*! lodash */ "lodash");
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
+var _angular = __webpack_require__(/*! angular */ "angular");
+
+var _angular2 = _interopRequireDefault(_angular);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+_angular2.default.module('grafana.directives').directive('sumologicQueryParameter', function () {
+    return {
+        templateUrl: 'public/plugins/mtanda-sumologic-datasource/partials/query.parameter.html',
+        controller: 'SumologicQueryParameterCtrl',
+        restrict: 'E',
+        scope: {
+            target: "=",
+            datasource: "=",
+            panelType: "=",
+            isLastQuery: "=",
+            onChange: "&"
+        }
+    };
 });
-
-angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', ($scope) => {
-  $scope.init = function () {
-    let target = $scope.target;
-    target.query = target.query || '';
-    target.aliasFormat = target.aliasFormat || '';
-
-    this.formats = [
-      { text: 'Time series (Records)', value: 'time_series_records' },
-      { text: 'Records', value: 'records' },
-      { text: 'Messages', value: 'messages' },
-    ];
-    if (!lodash__WEBPACK_IMPORTED_MODULE_0___default.a.includes(lodash__WEBPACK_IMPORTED_MODULE_0___default.a.map(this.formats, 'value'), target.format)) {
-      target.format = $scope.getDefaultFormat();
-    }
-
-    if (!$scope.onChange) {
-      $scope.onChange = function () { };
-    }
-  };
-
-  $scope.getDefaultFormat = function() {
-    if (this.panelType === 'table') {
-      return 'records';
-    }
-    return 'time_series_records';
-  };
-
-  $scope.init();
+_angular2.default.module('grafana.controllers').controller('SumologicQueryParameterCtrl', function ($scope) {
+    $scope.init = function () {
+        var target = $scope.target;
+        target.query = target.query || '';
+        target.aliasFormat = target.aliasFormat || '';
+        this.formats = [{ text: 'Time series (Records)', value: 'time_series_records' }, { text: 'Records', value: 'records' }, { text: 'Messages', value: 'messages' }];
+        if (!_lodash2.default.includes(_lodash2.default.map(this.formats, 'value'), target.format)) {
+            target.format = $scope.getDefaultFormat();
+        }
+        if (!$scope.onChange) {
+            $scope.onChange = function () {};
+        }
+    };
+    $scope.getDefaultFormat = function () {
+        if (this.panelType === 'table') {
+            return 'records';
+        }
+        return 'time_series_records';
+    };
+    $scope.init();
 });
-
 
 /***/ }),
 
