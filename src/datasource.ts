@@ -148,7 +148,7 @@ export class SumologicDatasource {
           .value();
 
         if (tableResponses.length > 0) {
-          return { data: [self.transformDataToTable(tableResponses)] };
+          return { data: [self.transformDataToTable(tableResponses)], range: options.range };
         } else {
           return {
             data: _.flatten(responses.map((response, index) => {
@@ -156,7 +156,8 @@ export class SumologicDatasource {
                 return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
               }
               return response;
-            }))
+            })),
+            range: options.range
           };
         }
       });
