@@ -28045,7 +28045,7 @@ var SumologicDatasource = /** @class */function () {
                 return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
             }).flatten().value();
             if (tableResponses.length > 0) {
-                return { data: [self.transformDataToTable(tableResponses)] };
+                return { data: [self.transformDataToTable(tableResponses)], range: options.range };
             } else {
                 return {
                     data: _lodash2.default.flatten(responses.map(function (response, index) {
@@ -28053,7 +28053,8 @@ var SumologicDatasource = /** @class */function () {
                             return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
                         }
                         return response;
-                    }))
+                    })),
+                    range: options.range
                 };
             }
         });
