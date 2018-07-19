@@ -28050,7 +28050,7 @@ var SumologicDatasource = /** @class */function () {
                 return {
                     data: _lodash2.default.flatten(responses.map(function (response, index) {
                         if (options.targets[index].format === 'time_series_records') {
-                            return self.transformRecordsToTimeSeries(response, options.targets[index], options.range.to.valueOf());
+                            return self.transformRecordsToTimeSeries(response, options.targets[index], options.intervalMs, options.range.to.valueOf());
                         }
                         return response;
                     })),
@@ -28162,7 +28162,7 @@ var SumologicDatasource = /** @class */function () {
         });
         return table;
     };
-    SumologicDatasource.prototype.transformRecordsToTimeSeries = function (response, target, defaultValue) {
+    SumologicDatasource.prototype.transformRecordsToTimeSeries = function (response, target, intervalMs, defaultValue) {
         var _this = this;
         var metricLabel = '';
         var dps = [];
@@ -28197,7 +28197,12 @@ var SumologicDatasource = /** @class */function () {
         }).forEach(function (r) {
             metricLabel = _this.createMetricLabel(r.map, target);
             result[metricLabel] = result[metricLabel] || [];
-            result[metricLabel].push([parseFloat(r.map[valueField]), parseFloat(r.map[keyField] || defaultValue)]);
+            var timestamp = parseFloat(r.map[keyField] || defaultValue);
+            var len = result[metricLabel].length;
+            if (len > 0 && timestamp - result[metricLabel][len - 1][1] > intervalMs) {
+                result[metricLabel].push([null, result[metricLabel][len - 1][1] + intervalMs]);
+            }
+            result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
         });
         return _lodash2.default.map(result, function (v, k) {
             return { target: k, datapoints: v };
