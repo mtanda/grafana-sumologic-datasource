@@ -309,20 +309,22 @@ export class SumologicDatasource {
       return {target: metricLabel, datapoints: dps};
     }
 
+    records =records.sort((a, b) => {
+      if (keyField === '') {
+        return 0;
+      }
+      if (a.map[keyField] < b.map[keyField]) {
+        return -1;
+      } else if (a.map[keyField] > b.map[keyField]) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+
     valueFields.forEach((valueField) => {
       let result = {};
-      records.sort((a, b) => {
-        if (keyField === '') {
-          return 0;
-        }
-        if (a.map[keyField] < b.map[keyField]) {
-          return -1;
-        } else if (a.map[keyField] > b.map[keyField]) {
-          return 1;
-        } else {
-          return 0;
-        }
-      }).forEach((r) => {
+      records.forEach((r) => {
         metricLabel = this.createMetricLabel(r.map, target);
         result[metricLabel] = result[metricLabel] || [];
         let timestamp = parseFloat(r.map[keyField] || defaultValue);
