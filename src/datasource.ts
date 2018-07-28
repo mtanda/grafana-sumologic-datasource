@@ -295,41 +295,50 @@ export class SumologicDatasource {
       return f.fieldType != 'string' && f.keyField;
     });
     keyField = keyField ? keyField.name : '';
-    let valueField = fields.find((f) => {
-      return f.fieldType != 'string' && !f.keyField;
+    let valueFields = [] as string[];
+
+    fields.forEach((f) => {
+      if (f.fieldType != 'string' && !f.keyField) {
+        valueFields.push(f.name);
+      }
     });
-    if (!valueField) {
-      return { target: metricLabel, datapoints: dps };
+
+    let timeSeries = [] as {}[];
+
+    if (valueFields.length == 0) {
+      return {target: metricLabel, datapoints: dps};
     }
-    valueField = valueField.name;
 
-    let result = {};
-    records.sort((a, b) => {
-      if (keyField === '') {
-        return 0;
-      }
-      if (a.map[keyField] < b.map[keyField]) {
-        return -1;
-      } else if (a.map[keyField] > b.map[keyField]) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }).forEach((r) => {
-      metricLabel = this.createMetricLabel(r.map, target);
-      result[metricLabel] = result[metricLabel] || [];
-      let timestamp = parseFloat(r.map[keyField] || defaultValue);
-      let len = result[metricLabel].length;
-      if (len > 0 &&
-        (timestamp - result[metricLabel][len - 1][1]) > intervalMs) {
-        result[metricLabel].push([null, result[metricLabel][len - 1][1] + intervalMs]);
-      }
-      result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
-    });
+    valueFields.forEach((valueField) => {
+      let result = {};
+      records.sort((a, b) => {
+        if (keyField === '') {
+          return 0;
+        }
+        if (a.map[keyField] < b.map[keyField]) {
+          return -1;
+        } else if (a.map[keyField] > b.map[keyField]) {
+          return 1;
+        } else {
+          return 0;
+        }
+      }).forEach((r) => {
+        metricLabel = this.createMetricLabel(r.map, target);
+        result[metricLabel] = result[metricLabel] || [];
+        let timestamp = parseFloat(r.map[keyField] || defaultValue);
+        let len = result[metricLabel].length;
+        if (len > 0 &&
+          (timestamp - result[metricLabel][len - 1][1]) > intervalMs) {
+          result[metricLabel].push([null, result[metricLabel][len - 1][1] + intervalMs]);
+        }
+        result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
+      });
 
-    return _.map(result, (v, k) => {
-      return { target: k, datapoints: v };
+      _.map(result, (v) => {
+        timeSeries.push({target: valueField, datapoints: v});
+      });
     });
+    return timeSeries;
   }
 
   createMetricLabel(record, target) {
