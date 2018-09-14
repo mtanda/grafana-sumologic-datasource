@@ -42,7 +42,7 @@ export class SumologicDatasource {
       tagValues: {}
     };
     // Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
-    this.MAX_AVAILABLE_TOKEN = 10; // 10 api calls per second
+    this.MAX_AVAILABLE_TOKEN = 4; // 4 api calls per second
     this.token = this.MAX_AVAILABLE_TOKEN;
     this.tokenTimer = null;
     this.excludeFieldList = [
