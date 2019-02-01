@@ -14368,7 +14368,13 @@ function () {
       }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
     }
 
-    return this.backendSrv.datasourceRequest(options).catch(function (err) {
+    return this.backendSrv.datasourceRequest(options).then(function (response) {
+      if (response.data.status && response.data.status === 404) {
+        return Promise.reject(response);
+      }
+
+      return response;
+    }).catch(function (err) {
       if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
         _this.datasource.token = 0;
         return _this.retryable(3, function (retryCount) {
