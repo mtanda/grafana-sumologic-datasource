@@ -305,6 +305,8 @@ export class SumologicQuerier {
                     console.error('rate limit exceeded');
                     return err;
                 });
+            } else if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                return Promise.reject(err);
             } else {
                 console.error(err);
                 return Promise.reject(err);
