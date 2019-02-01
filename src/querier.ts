@@ -189,7 +189,9 @@ export class SumologicQuerier {
                     }
 
                     // wait for new result arrival
-                    return this.transition('REQUEST_STATUS');
+                    return this.delay(() => {
+                        return this.transition('REQUEST_STATUS');
+                    }, 200);
                 }).catch((err) => {
                     if (err.data && err.data.code && err.data.code === 'unauthorized') {
                         return Promise.reject(err);
