@@ -221,6 +221,12 @@ export class SumologicQuerier {
                                     return this.transition('REQUEST_STATUS');
                                 }).mergeMap((value: any) => value)
                             );
+                    }).catch((err) => {
+                        if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                            return this.retry();
+                        } else {
+                            return Promise.reject(err);
+                        }
                     });
                 } else if (this.format === 'messages') {
                     let limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
@@ -238,6 +244,12 @@ export class SumologicQuerier {
                                     return this.transition('REQUEST_STATUS');
                                 }).mergeMap((value: any) => value)
                             );
+                    }).catch((err) => {
+                        if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                            return this.retry();
+                        } else {
+                            return Promise.reject(err);
+                        }
                     });
                 } else {
                     return Promise.reject({ message: 'unsupported type' });
