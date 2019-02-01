@@ -14284,6 +14284,12 @@ function () {
             }).mergeMap(function (value) {
               return value;
             }));
+          }).catch(function (err) {
+            if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+              return _this.retry();
+            } else {
+              return Promise.reject(err);
+            }
           });
         } else if (this.format === 'messages') {
           var limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
@@ -14304,6 +14310,12 @@ function () {
             }).mergeMap(function (value) {
               return value;
             }));
+          }).catch(function (err) {
+            if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+              return _this.retry();
+            } else {
+              return Promise.reject(err);
+            }
           });
         } else {
           return Promise.reject({
