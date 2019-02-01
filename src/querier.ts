@@ -289,7 +289,12 @@ export class SumologicQuerier {
             }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
         }
 
-        return this.backendSrv.datasourceRequest(options).catch((err) => {
+        return this.backendSrv.datasourceRequest(options).then((response) => {
+            if (response.data.status && response.data.status === 404) {
+                return Promise.reject(response);
+            }
+            return response;
+        }).catch((err) => {
             if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
                 this.datasource.token = 0;
                 return this.retryable(3, (retryCount) => {
