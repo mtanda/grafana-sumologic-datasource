@@ -336,7 +336,7 @@ export class SumologicDatasource {
         result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
       });
 
-      _.map(result, (v) => {
+      _.each(result, (v) => {
         timeSeries.push({ target: valueField, datapoints: v });
       });
     });
