@@ -306,10 +306,10 @@ export class SumologicDatasource {
     let timeSeries = [] as {}[];
 
     if (valueFields.length == 0) {
-      return {target: metricLabel, datapoints: dps};
+      return { target: metricLabel, datapoints: dps };
     }
 
-    records =records.sort((a, b) => {
+    records = records.sort((a, b) => {
       if (keyField === '') {
         return 0;
       }
@@ -337,7 +337,7 @@ export class SumologicDatasource {
       });
 
       _.map(result, (v) => {
-        timeSeries.push({target: valueField, datapoints: v});
+        timeSeries.push({ target: valueField, datapoints: v });
       });
     });
     return timeSeries;
