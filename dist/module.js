@@ -13682,7 +13682,7 @@ function () {
         result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
       });
 
-      _lodash2.default.map(result, function (v) {
+      _lodash2.default.each(result, function (v) {
         timeSeries.push({
           target: valueField,
           datapoints: v
