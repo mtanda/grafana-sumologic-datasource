@@ -106,7 +106,7 @@ export class SumologicDatasource {
       }).value();
     return Observable
       .combineLatest(queries)
-      .map((responses) => {
+      .map((responses: any) => {
         responses = responses.filter((r) => { return !_.isEmpty(r); });
 
         if (this.hasAdhocFilter()) {
