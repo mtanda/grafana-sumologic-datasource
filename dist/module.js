@@ -13343,6 +13343,145 @@ __webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+
+    function step(result) {
+      result.done ? resolve(result.value) : new P(function (resolve) {
+        resolve(result.value);
+      }).then(fulfilled, rejected);
+    }
+
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+    label: 0,
+    sent: function sent() {
+      if (t[0] & 1) throw t[1];
+      return t[1];
+    },
+    trys: [],
+    ops: []
+  },
+      f,
+      y,
+      t,
+      g;
+  return g = {
+    next: verb(0),
+    "throw": verb(1),
+    "return": verb(2)
+  }, typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+
+    while (_) {
+      try {
+        if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+        if (y = 0, t) op = [op[0] & 2, t.value];
+
+        switch (op[0]) {
+          case 0:
+          case 1:
+            t = op;
+            break;
+
+          case 4:
+            _.label++;
+            return {
+              value: op[1],
+              done: false
+            };
+
+          case 5:
+            _.label++;
+            y = op[1];
+            op = [0];
+            continue;
+
+          case 7:
+            op = _.ops.pop();
+
+            _.trys.pop();
+
+            continue;
+
+          default:
+            if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+              _ = 0;
+              continue;
+            }
+
+            if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+              _.label = op[1];
+              break;
+            }
+
+            if (op[0] === 6 && _.label < t[1]) {
+              _.label = t[1];
+              t = op;
+              break;
+            }
+
+            if (t && _.label < t[2]) {
+              _.label = t[2];
+
+              _.ops.push(op);
+
+              break;
+            }
+
+            if (t[2]) _.ops.pop();
+
+            _.trys.pop();
+
+            continue;
+        }
+
+        op = body.call(thisArg, _);
+      } catch (e) {
+        op = [6, e];
+        y = 0;
+      } finally {
+        f = t = 0;
+      }
+    }
+
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+
 var SumologicDatasource =
 /** @class */
 function () {
@@ -13418,7 +13557,7 @@ function () {
         }
       }
 
-      return _this.logQuery(params, target.format, true).mergeMap(function (value) {
+      return _this.logQueryObservable(params, target.format).mergeMap(function (value) {
         return value;
       }).scan(function (acc, one) {
         acc.fields = one.fields;
@@ -13493,94 +13632,191 @@ function () {
   };
 
   SumologicDatasource.prototype.metricFindQuery = function (query) {
-    var range = this.timeSrv.timeRange();
-    var recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
+    return __awaiter(this, void 0, void 0, function () {
+      var range, recordValuesQuery, recordKey_1, query_1, params, result;
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            range = this.timeSrv.timeRange();
+            recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
+            if (!recordValuesQuery) return [3
+            /*break*/
+            , 2];
+            recordKey_1 = recordValuesQuery[1].toLowerCase();
+            query_1 = recordValuesQuery[2];
+            params = {
+              query: this.templateSrv.replace(this.stripComment(query_1)),
+              from: String(this.convertTime(range.from, false)),
+              to: String(this.convertTime(range.to, true)),
+              timeZone: 'Etc/UTC'
+            };
+            return [4
+            /*yield*/
+            , this.logQuery(params, 'records')];
 
-    if (recordValuesQuery) {
-      var recordKey_1 = recordValuesQuery[1].toLowerCase();
-      var query_1 = recordValuesQuery[2];
-      var params = {
-        query: this.templateSrv.replace(this.stripComment(query_1)),
-        from: String(this.convertTime(range.from, false)),
-        to: String(this.convertTime(range.to, true)),
-        timeZone: 'Etc/UTC'
-      };
-      return this.logQuery(params, 'records', false).then(function (result) {
-        if (_lodash2.default.isEmpty(result)) {
-          return [];
+          case 1:
+            result = _a.sent();
+
+            if (_lodash2.default.isEmpty(result)) {
+              return [2
+              /*return*/
+              , []];
+            }
+
+            return [2
+            /*return*/
+            , result.records.map(function (r) {
+              return {
+                text: r.map[recordKey_1],
+                value: r.map[recordKey_1]
+              };
+            })];
+
+          case 2:
+            return [2
+            /*return*/
+            ];
         }
-
-        return result.records.map(function (r) {
-          return {
-            text: r.map[recordKey_1],
-            value: r.map[recordKey_1]
-          };
-        });
       });
-    }
+    });
   };
 
   SumologicDatasource.prototype.annotationQuery = function (options) {
-    var _this = this;
+    return __awaiter(this, void 0, void 0, function () {
+      var annotation, query, tagKeys, titleFormat, textFormat, params, result, eventList;
 
-    var annotation = options.annotation;
-    var query = annotation.query || '';
-    var tagKeys = annotation.tagKeys || '';
-    tagKeys = tagKeys.split(',');
-    var titleFormat = annotation.titleFormat || '';
-    var textFormat = annotation.textFormat || '';
+      var _this = this;
 
-    if (!query) {
-      return Promise.resolve([]);
-    }
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            annotation = options.annotation;
+            query = annotation.query || '';
+            tagKeys = annotation.tagKeys || '';
+            tagKeys = tagKeys.split(',');
+            titleFormat = annotation.titleFormat || '';
+            textFormat = annotation.textFormat || '';
 
-    var params = {
-      query: this.templateSrv.replace(this.stripComment(query)),
-      from: String(this.convertTime(options.range.from, false)),
-      to: String(this.convertTime(options.range.to, true)),
-      timeZone: 'Etc/UTC'
-    };
-    return this.logQuery(params, 'messages', false).then(function (result) {
-      if (_lodash2.default.isEmpty(result)) {
-        return [];
-      }
+            if (!query) {
+              return [2
+              /*return*/
+              , Promise.resolve([])];
+            }
 
-      var eventList = result.messages.map(function (message) {
-        var tags = _lodash2.default.chain(message.map).filter(function (v, k) {
-          return _lodash2.default.includes(tagKeys, k);
-        }).value();
+            params = {
+              query: this.templateSrv.replace(this.stripComment(query)),
+              from: String(this.convertTime(options.range.from, false)),
+              to: String(this.convertTime(options.range.to, true)),
+              timeZone: 'Etc/UTC'
+            };
+            return [4
+            /*yield*/
+            , this.logQuery(params, 'messages')];
 
-        return {
-          annotation: annotation,
-          time: parseInt(message.map['_messagetime'], 10),
-          title: _this.renderTemplate(titleFormat, message.map),
-          tags: tags,
-          text: _this.renderTemplate(textFormat, message.map)
-        };
+          case 1:
+            result = _a.sent();
+
+            if (_lodash2.default.isEmpty(result)) {
+              return [2
+              /*return*/
+              , []];
+            }
+
+            eventList = result.messages.map(function (message) {
+              var tags = _lodash2.default.chain(message.map).filter(function (v, k) {
+                return _lodash2.default.includes(tagKeys, k);
+              }).value();
+
+              return {
+                annotation: annotation,
+                time: parseInt(message.map['_messagetime'], 10),
+                title: _this.renderTemplate(titleFormat, message.map),
+                tags: tags,
+                text: _this.renderTemplate(textFormat, message.map)
+              };
+            });
+            return [2
+            /*return*/
+            , eventList];
+        }
       });
-      return eventList;
     });
   };
 
   SumologicDatasource.prototype.testDatasource = function () {
-    var params = {
-      query: '| count _sourceCategory',
-      from: new Date().getTime() - 10 * 60 * 1000,
-      to: new Date().getTime(),
-      timeZone: 'Etc/UTC'
-    };
-    return this.logQuery(params, 'records', false).then(function (response) {
-      return {
-        status: 'success',
-        message: 'Data source is working',
-        title: 'Success'
-      };
+    return __awaiter(this, void 0, void 0, function () {
+      var params, err_1;
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            params = {
+              query: '| count _sourceCategory',
+              from: new Date().getTime() - 10 * 60 * 1000,
+              to: new Date().getTime(),
+              timeZone: 'Etc/UTC'
+            };
+            _a.label = 1;
+
+          case 1:
+            _a.trys.push([1, 3,, 4]);
+
+            return [4
+            /*yield*/
+            , this.logQuery(params, 'records')];
+
+          case 2:
+            _a.sent();
+
+            return [2
+            /*return*/
+            , {
+              status: 'success',
+              message: 'Data source is working',
+              title: 'Success'
+            }];
+
+          case 3:
+            err_1 = _a.sent();
+            return [2
+            /*return*/
+            , {
+              status: 'error',
+              message: 'Data source is not working',
+              title: 'Error'
+            }];
+
+          case 4:
+            return [2
+            /*return*/
+            ];
+        }
+      });
     });
   };
 
-  SumologicDatasource.prototype.logQuery = function (params, format, useObservable) {
-    var querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
-    return querier.getResult();
+  SumologicDatasource.prototype.logQuery = function (params, format) {
+    return __awaiter(this, void 0, void 0, function () {
+      var querier;
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, false, this, this.backendSrv);
+            return [4
+            /*yield*/
+            , querier.getResult()];
+
+          case 1:
+            return [2
+            /*return*/
+            , _a.sent()];
+        }
+      });
+    });
+  };
+
+  SumologicDatasource.prototype.logQueryObservable = function (params, format) {
+    var querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, true, this, this.backendSrv);
+    return querier.getResultObservable();
   };
 
   SumologicDatasource.prototype.transformDataToTable = function (data) {
@@ -14041,6 +14277,145 @@ __webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+
+    function step(result) {
+      result.done ? resolve(result.value) : new P(function (resolve) {
+        resolve(result.value);
+      }).then(fulfilled, rejected);
+    }
+
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+
+var __generator = undefined && undefined.__generator || function (thisArg, body) {
+  var _ = {
+    label: 0,
+    sent: function sent() {
+      if (t[0] & 1) throw t[1];
+      return t[1];
+    },
+    trys: [],
+    ops: []
+  },
+      f,
+      y,
+      t,
+      g;
+  return g = {
+    next: verb(0),
+    "throw": verb(1),
+    "return": verb(2)
+  }, typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+    return this;
+  }), g;
+
+  function verb(n) {
+    return function (v) {
+      return step([n, v]);
+    };
+  }
+
+  function step(op) {
+    if (f) throw new TypeError("Generator is already executing.");
+
+    while (_) {
+      try {
+        if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+        if (y = 0, t) op = [op[0] & 2, t.value];
+
+        switch (op[0]) {
+          case 0:
+          case 1:
+            t = op;
+            break;
+
+          case 4:
+            _.label++;
+            return {
+              value: op[1],
+              done: false
+            };
+
+          case 5:
+            _.label++;
+            y = op[1];
+            op = [0];
+            continue;
+
+          case 7:
+            op = _.ops.pop();
+
+            _.trys.pop();
+
+            continue;
+
+          default:
+            if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+              _ = 0;
+              continue;
+            }
+
+            if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+              _.label = op[1];
+              break;
+            }
+
+            if (op[0] === 6 && _.label < t[1]) {
+              _.label = t[1];
+              t = op;
+              break;
+            }
+
+            if (t && _.label < t[2]) {
+              _.label = t[2];
+
+              _.ops.push(op);
+
+              break;
+            }
+
+            if (t[2]) _.ops.pop();
+
+            _.trys.pop();
+
+            continue;
+        }
+
+        op = body.call(thisArg, _);
+      } catch (e) {
+        op = [6, e];
+        y = 0;
+      } finally {
+        f = t = 0;
+      }
+    }
+
+    if (op[0] & 5) throw op[1];
+    return {
+      value: op[0] ? op[1] : void 0,
+      done: true
+    };
+  }
+};
+
 var SumologicQuerier =
 /** @class */
 function () {
@@ -14057,21 +14432,49 @@ function () {
   }
 
   SumologicQuerier.prototype.getResult = function () {
+    return __awaiter(this, void 0, void 0, function () {
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            this.startTime = new Date();
+            return [4
+            /*yield*/
+            , this.delay(Math.random() * 1000)];
+
+          case 1:
+            _a.sent();
+
+            return [2
+            /*return*/
+            , this.transition('CREATE_SEARCH_JOB')];
+        }
+      });
+    });
+  };
+
+  SumologicQuerier.prototype.getResultObservable = function () {
     var _this = this;
 
     this.startTime = new Date();
+    return _rxjs.Observable.defer(function () {
+      return __awaiter(_this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+          switch (_a.label) {
+            case 0:
+              return [4
+              /*yield*/
+              , this.delay(Math.random() * 1000)];
 
-    if (!this.useObservable) {
-      return this.delay(function () {
-        return _this.transition('CREATE_SEARCH_JOB');
-      }, Math.random() * 1000);
-    } else {
-      return _rxjs.Observable.defer(function () {
-        return _this.delay(function () {
-          return _this.transition('CREATE_SEARCH_JOB');
-        }, Math.random() * 1000);
+            case 1:
+              _a.sent();
+
+              return [2
+              /*return*/
+              , this.transition('CREATE_SEARCH_JOB')];
+          }
+        });
       });
-    }
+    });
   };
 
   SumologicQuerier.prototype.transition = function (state) {
@@ -14086,336 +14489,717 @@ function () {
   };
 
   SumologicQuerier.prototype.retry = function () {
-    var _this = this;
+    return __awaiter(this, void 0, void 0, function () {
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            this.retryCount += 1;
+            return [4
+            /*yield*/
+            , this.delay(this.calculateRetryWait(1000, this.retryCount))];
 
-    this.retryCount += 1;
-    return this.delay(function () {
-      if (!_this.useObservable) {
-        return _this.loop();
-      } else {
-        return _this.loopForObservable();
-      }
-    }, this.calculateRetryWait(1000, this.retryCount));
+          case 1:
+            _a.sent();
+
+            if (!!this.useObservable) return [3
+            /*break*/
+            , 3];
+            return [4
+            /*yield*/
+            , this.loop()];
+
+          case 2:
+            return [2
+            /*return*/
+            , _a.sent()];
+
+          case 3:
+            return [4
+            /*yield*/
+            , this.loopForObservable()];
+
+          case 4:
+            return [2
+            /*return*/
+            , _a.sent()];
+        }
+      });
+    });
   };
 
   SumologicQuerier.prototype.loop = function () {
-    var _this = this;
+    return __awaiter(this, void 0, void 0, function () {
+      var now, _a, _b, _c, message, err_1, limit, response, limit, response;
 
-    if (this.job) {
-      var now = new Date();
+      return __generator(this, function (_d) {
+        switch (_d.label) {
+          case 0:
+            if (!this.job) return [3
+            /*break*/
+            , 2];
+            now = new Date();
+            if (!(now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000)) return [3
+            /*break*/
+            , 2];
+            console.error('timeout');
+            return [4
+            /*yield*/
+            , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
 
-      if (now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000) {
-        console.error('timeout');
-        return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then(function (result) {
-          return Promise.reject({
-            message: 'timeout'
-          });
-        });
-      }
-    }
+          case 1:
+            _d.sent();
 
-    switch (this.state) {
-      case 'CREATE_SEARCH_JOB':
-        return this.doRequest('POST', '/v1/search/jobs', this.params).then(function (job) {
-          _this.job = job;
-          return _this.transition('REQUEST_STATUS');
-        });
-        break;
+            return [2
+            /*return*/
+            , Promise.reject({
+              message: 'timeout'
+            })];
 
-      case 'REQUEST_STATUS':
-        return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then(function (status) {
-          _this.status = status;
+          case 2:
+            _a = this.state;
 
-          if (_this.status.data.state !== 'DONE GATHERING RESULTS') {
-            if (_this.retryCount < 20) {
-              return _this.retry();
+            switch (_a) {
+              case 'CREATE_SEARCH_JOB':
+                return [3
+                /*break*/
+                , 3];
+
+              case 'REQUEST_STATUS':
+                return [3
+                /*break*/
+                , 5];
+
+              case 'REQUEST_RESULTS':
+                return [3
+                /*break*/
+                , 9];
+            }
+
+            return [3
+            /*break*/
+            , 15];
+
+          case 3:
+            _b = this;
+            return [4
+            /*yield*/
+            , this.doRequest('POST', '/v1/search/jobs', this.params)];
+
+          case 4:
+            _b.job = _d.sent();
+            return [2
+            /*return*/
+            , this.transition('REQUEST_STATUS')];
+
+          case 5:
+            _d.trys.push([5, 7,, 8]);
+
+            _c = this;
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
+
+          case 6:
+            _c.status = _d.sent();
+
+            if (this.status.data.state !== 'DONE GATHERING RESULTS') {
+              if (this.retryCount < 20) {
+                return [2
+                /*return*/
+                , this.retry()];
+              } else {
+                return [2
+                /*return*/
+                , Promise.reject({
+                  message: 'max retries exceeded'
+                })];
+              }
+            }
+
+            if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+              message = '';
+
+              if (!_lodash2.default.isEmpty(this.status.data.pendingErrors)) {
+                message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
+              }
+
+              if (!_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+                message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
+              }
+
+              return [2
+              /*return*/
+              , Promise.reject({
+                message: message
+              })];
+            }
+
+            return [2
+            /*return*/
+            , this.transition('REQUEST_RESULTS')];
+
+          case 7:
+            err_1 = _d.sent();
+
+            if (err_1.data && err_1.data.code && err_1.data.code === 'unauthorized') {
+              return [2
+              /*return*/
+              , Promise.reject(err_1)];
+            } // need to wait until job is created and registered
+
+
+            if (this.retryCount < 6 && err_1.data && err_1.data.code && err_1.data.code === 'searchjob.jobid.invalid') {
+              return [2
+              /*return*/
+              , this.retry()];
             } else {
-              return Promise.reject({
-                message: 'max retries exceeded'
-              });
-            }
-          }
-
-          if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors) || !_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
-            var message = '';
-
-            if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors)) {
-              message += 'Error:\n' + _this.status.data.pendingErrors.join('\n') + '\n';
+              return [2
+              /*return*/
+              , Promise.reject(err_1)];
             }
 
-            if (!_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
-              message += 'Warning:\n' + _this.status.data.pendingWarnings.join('\n');
+            return [3
+            /*break*/
+            , 8];
+
+          case 8:
+            return [3
+            /*break*/
+            , 15];
+
+          case 9:
+            if (!(this.format === 'time_series_records' || this.format === 'records')) return [3
+            /*break*/
+            , 11];
+
+            if (this.status.data.recordCount === 0) {
+              return [2
+              /*return*/
+              , Promise.resolve([])];
             }
 
-            return Promise.reject({
-              message: message
-            });
-          }
+            limit = Math.min(this.maximumOffset, this.status.data.recordCount);
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit)];
 
-          return _this.transition('REQUEST_RESULTS');
-        }).catch(function (err) {
-          if (err.data && err.data.code && err.data.code === 'unauthorized') {
-            return Promise.reject(err);
-          } // need to wait until job is created and registered
+          case 10:
+            response = _d.sent();
+            return [2
+            /*return*/
+            , response.data];
 
+          case 11:
+            if (!(this.format === 'messages')) return [3
+            /*break*/
+            , 13];
 
-          if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-            return _this.retry();
-          } else {
-            return Promise.reject(err);
-          }
-        });
-        break;
+            if (this.status.data.messageCount === 0) {
+              return [2
+              /*return*/
+              , Promise.resolve([])];
+            }
 
-      case 'REQUEST_RESULTS':
-        if (this.format === 'time_series_records' || this.format === 'records') {
-          if (this.status.data.recordCount === 0) {
-            return Promise.resolve([]);
-          }
+            limit = Math.min(this.maximumOffset, this.status.data.messageCount);
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit)];
 
-          var limit = Math.min(this.maximumOffset, this.status.data.recordCount);
-          return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit).then(function (response) {
-            return response.data;
-          });
-        } else if (this.format === 'messages') {
-          if (this.status.data.messageCount === 0) {
-            return Promise.resolve([]);
-          }
+          case 12:
+            response = _d.sent();
+            return [2
+            /*return*/
+            , response.data];
 
-          var limit = Math.min(this.maximumOffset, this.status.data.messageCount);
-          return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit).then(function (response) {
-            return response.data;
-          });
-        } else {
-          return Promise.reject({
-            message: 'unsupported type'
-          });
+          case 13:
+            return [2
+            /*return*/
+            , Promise.reject({
+              message: 'unsupported type'
+            })];
+
+          case 14:
+            return [3
+            /*break*/
+            , 15];
+
+          case 15:
+            return [2
+            /*return*/
+            , Promise.reject({
+              message: 'unexpected status'
+            })];
         }
-
-        break;
-    }
+      });
+    });
   };
 
   SumologicQuerier.prototype.loopForObservable = function () {
-    var _this = this;
+    return __awaiter(this, void 0, void 0, function () {
+      var now, _a, _b, _c, prevMessageCount, prevRecordCount, err_2, limit, response, err_3, limit, response, err_4;
 
-    if (this.job) {
-      var now = new Date();
+      var _this = this;
 
-      if (now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000) {
-        console.error('timeout');
-        return this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id).then(function (result) {
-          return Promise.reject({
-            message: 'timeout'
-          });
-        });
-      }
-    }
+      return __generator(this, function (_d) {
+        switch (_d.label) {
+          case 0:
+            if (!this.job) return [3
+            /*break*/
+            , 2];
+            now = new Date();
+            if (!(now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000)) return [3
+            /*break*/
+            , 2];
+            console.error('timeout');
+            return [4
+            /*yield*/
+            , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
 
-    switch (this.state) {
-      case 'CREATE_SEARCH_JOB':
-        return this.doRequest('POST', '/v1/search/jobs', this.params).then(function (job) {
-          _this.job = job;
-          return _this.transition('REQUEST_STATUS');
-        });
-        break;
+          case 1:
+            _d.sent();
 
-      case 'REQUEST_STATUS':
-        return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id).then(function (status) {
-          _this.status = status;
-          var prevMessageCount = _this.messageCount;
-          var prevRecordCount = _this.recordCount;
-          _this.messageCount = _this.status.data.messageCount;
-          _this.recordCount = _this.status.data.recordCount;
+            return [2
+            /*return*/
+            , _rxjs.Observable.throw({
+              message: 'timeout'
+            })];
 
-          if (!_lodash2.default.isEmpty(_this.status.data.pendingErrors) || !_lodash2.default.isEmpty(_this.status.data.pendingWarnings)) {
-            return Promise.reject({
-              message: _this.status.data.pendingErrors.concat(_this.status.data.pendingWarnings).join('\n')
-            });
-          }
+          case 2:
+            _a = this.state;
 
-          if (_this.status.data.state === 'DONE GATHERING RESULTS') {
-            return _this.transition('REQUEST_RESULTS');
-          }
+            switch (_a) {
+              case 'CREATE_SEARCH_JOB':
+                return [3
+                /*break*/
+                , 3];
 
-          if ((_this.format === 'time_series_records' || _this.format === 'records') && _this.recordCount > prevRecordCount) {
-            return _this.transition('REQUEST_RESULTS');
-          }
+              case 'REQUEST_STATUS':
+                return [3
+                /*break*/
+                , 5];
 
-          if (_this.format === 'messages' && _this.messageCount > prevMessageCount) {
-            return _this.transition('REQUEST_RESULTS');
-          } // wait for new result arrival
-
-
-          return _this.delay(function () {
-            return _this.transition('REQUEST_STATUS');
-          }, 200);
-        }).catch(function (err) {
-          if (err.data && err.data.code && err.data.code === 'unauthorized') {
-            return Promise.reject(err);
-          } // need to wait until job is created and registered
-
-
-          if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-            return _this.retry();
-          } else {
-            return Promise.reject(err);
-          }
-        });
-        break;
-
-      case 'REQUEST_RESULTS':
-        if (this.format === 'time_series_records' || this.format === 'records') {
-          var limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
-
-          if (limit === 0) {
-            return _rxjs.Observable.empty();
-          }
-
-          return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit).then(function (response) {
-            _this.offset += response.data.records.length;
-
-            if (_this.status.data.state === 'DONE GATHERING RESULTS' || _this.offset >= _this.maximumOffset) {
-              return _rxjs.Observable.from([response.data]);
+              case 'REQUEST_RESULTS':
+                return [3
+                /*break*/
+                , 10];
             }
 
-            return _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
+            return [3
+            /*break*/
+            , 22];
+
+          case 3:
+            _b = this;
+            return [4
+            /*yield*/
+            , this.doRequest('POST', '/v1/search/jobs', this.params)];
+
+          case 4:
+            _b.job = _d.sent();
+            return [2
+            /*return*/
+            , this.transition('REQUEST_STATUS')];
+
+          case 5:
+            _d.trys.push([5, 8,, 9]);
+
+            _c = this;
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
+
+          case 6:
+            _c.status = _d.sent();
+            prevMessageCount = this.messageCount;
+            prevRecordCount = this.recordCount;
+            this.messageCount = this.status.data.messageCount;
+            this.recordCount = this.status.data.recordCount;
+
+            if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+              return [2
+              /*return*/
+              , _rxjs.Observable.throw({
+                message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n')
+              })];
+            }
+
+            if (this.status.data.state === 'DONE GATHERING RESULTS') {
+              return [2
+              /*return*/
+              , this.transition('REQUEST_RESULTS')];
+            }
+
+            if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
+              return [2
+              /*return*/
+              , this.transition('REQUEST_RESULTS')];
+            }
+
+            if (this.format === 'messages' && this.messageCount > prevMessageCount) {
+              return [2
+              /*return*/
+              , this.transition('REQUEST_RESULTS')];
+            } // wait for new result arrival
+
+
+            return [4
+            /*yield*/
+            , this.delay(200)];
+
+          case 7:
+            // wait for new result arrival
+            _d.sent();
+
+            return [2
+            /*return*/
+            , this.transition('REQUEST_STATUS')];
+
+          case 8:
+            err_2 = _d.sent();
+
+            if (err_2.data && err_2.data.code && err_2.data.code === 'unauthorized') {
+              return [2
+              /*return*/
+              , _rxjs.Observable.throw(err_2)];
+            } // need to wait until job is created and registered
+
+
+            if (this.retryCount < 6 && err_2.data && err_2.data.code && err_2.data.code === 'searchjob.jobid.invalid') {
+              return [2
+              /*return*/
+              , this.retry()];
+            } else {
+              return [2
+              /*return*/
+              , _rxjs.Observable.throw(err_2)];
+            }
+
+            return [3
+            /*break*/
+            , 9];
+
+          case 9:
+            return [3
+            /*break*/
+            , 22];
+
+          case 10:
+            if (!(this.format === 'time_series_records' || this.format === 'records')) return [3
+            /*break*/
+            , 15];
+            limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
+
+            if (limit === 0) {
+              return [2
+              /*return*/
+              , _rxjs.Observable.empty()];
+            }
+
+            _d.label = 11;
+
+          case 11:
+            _d.trys.push([11, 13,, 14]);
+
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit)];
+
+          case 12:
+            response = _d.sent();
+            this.offset += response.data.records.length;
+
+            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+              return [2
+              /*return*/
+              , _rxjs.Observable.from([response.data])];
+            }
+
+            return [2
+            /*return*/
+            , _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
               return _this.transition('REQUEST_STATUS');
             }).mergeMap(function (value) {
               return value;
-            }));
-          }).catch(function (err) {
-            if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-              return _this.retry();
+            }))];
+
+          case 13:
+            err_3 = _d.sent();
+
+            if (this.retryCount < 6 && err_3.data && err_3.data.code && err_3.data.code === 'searchjob.jobid.invalid') {
+              return [2
+              /*return*/
+              , this.retry()];
             } else {
-              return Promise.reject(err);
-            }
-          });
-        } else if (this.format === 'messages') {
-          var limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
-
-          if (limit === 0) {
-            return _rxjs.Observable.empty();
-          }
-
-          return this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit).then(function (response) {
-            _this.offset += response.data.messages.length;
-
-            if (_this.status.data.state === 'DONE GATHERING RESULTS' || _this.offset >= _this.maximumOffset) {
-              return _rxjs.Observable.from([response.data]);
+              return [2
+              /*return*/
+              , _rxjs.Observable.throw(err_3)];
             }
 
-            return _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
+            return [3
+            /*break*/
+            , 14];
+
+          case 14:
+            ;
+            return [3
+            /*break*/
+            , 21];
+
+          case 15:
+            if (!(this.format === 'messages')) return [3
+            /*break*/
+            , 20];
+            limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
+
+            if (limit === 0) {
+              return [2
+              /*return*/
+              , _rxjs.Observable.empty()];
+            }
+
+            _d.label = 16;
+
+          case 16:
+            _d.trys.push([16, 18,, 19]);
+
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit)];
+
+          case 17:
+            response = _d.sent();
+            this.offset += response.data.messages.length;
+
+            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+              return [2
+              /*return*/
+              , _rxjs.Observable.from([response.data])];
+            }
+
+            return [2
+            /*return*/
+            , _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
               return _this.transition('REQUEST_STATUS');
             }).mergeMap(function (value) {
               return value;
-            }));
-          }).catch(function (err) {
-            if (_this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-              return _this.retry();
+            }))];
+
+          case 18:
+            err_4 = _d.sent();
+
+            if (this.retryCount < 6 && err_4.data && err_4.data.code && err_4.data.code === 'searchjob.jobid.invalid') {
+              return [2
+              /*return*/
+              , this.retry()];
             } else {
-              return Promise.reject(err);
+              return [2
+              /*return*/
+              , _rxjs.Observable.throw(err_4)];
             }
-          });
-        } else {
-          return Promise.reject({
-            message: 'unsupported type'
-          });
+
+            return [3
+            /*break*/
+            , 19];
+
+          case 19:
+            ;
+            return [3
+            /*break*/
+            , 21];
+
+          case 20:
+            return [2
+            /*return*/
+            , _rxjs.Observable.throw({
+              message: 'unsupported type'
+            })];
+
+          case 21:
+            return [3
+            /*break*/
+            , 22];
+
+          case 22:
+            return [2
+            /*return*/
+            , _rxjs.Observable.throw({
+              message: 'unexpected status'
+            })];
         }
-
-        break;
-    }
+      });
+    });
   };
 
   SumologicQuerier.prototype.doRequest = function (method, path, params) {
-    var _this = this;
-
     if (params === void 0) {
       params = {};
     }
 
-    if (this.datasource.token === 0) {
-      return this.delay(function () {
-        return _this.doRequest(method, path, params);
-      }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
-    }
+    return __awaiter(this, void 0, void 0, function () {
+      var options, response, err_5;
 
-    var options = {
-      method: method,
-      url: this.datasource.url + path,
-      data: params,
-      headers: {},
-      inspect: {
-        type: 'sumologic'
-      },
-      withCredentials: false
-    };
+      var _this = this;
 
-    if (this.datasource.basicAuth || this.datasource.withCredentials) {
-      options.withCredentials = true;
-    }
+      return __generator(this, function (_a) {
+        switch (_a.label) {
+          case 0:
+            if (!(this.datasource.token === 0)) return [3
+            /*break*/
+            , 2];
+            return [4
+            /*yield*/
+            , this.delay(Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN))];
 
-    if (this.datasource.basicAuth) {
-      options.headers.Authorization = this.datasource.basicAuth;
-    }
+          case 1:
+            _a.sent();
 
-    options.headers['Content-Type'] = 'application/json';
-    this.datasource.token--;
+            return [2
+            /*return*/
+            , this.doRequest(method, path, params)];
 
-    if (this.datasource.tokenTimer === null) {
-      this.datasource.tokenTimer = setInterval(function () {
-        _this.datasource.provideToken();
-      }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
-    }
+          case 2:
+            options = {
+              method: method,
+              url: this.datasource.url + path,
+              data: params,
+              headers: {},
+              inspect: {
+                type: 'sumologic'
+              },
+              withCredentials: false
+            };
 
-    return this.backendSrv.datasourceRequest(options).then(function (response) {
-      if (response.data.status && response.data.status === 404) {
-        return Promise.reject(response);
-      }
+            if (this.datasource.basicAuth || this.datasource.withCredentials) {
+              options.withCredentials = true;
+            }
 
-      return response;
-    }).catch(function (err) {
-      if (err.data && err.data.code && err.data.code === 'rate.limit.exceeded') {
-        _this.datasource.token = 0;
-        return _this.retryable(3, function (retryCount) {
-          return _this.delay(function () {
-            return _this.backendSrv.datasourceRequest(options);
-          }, _this.calculateRetryWait(1000, retryCount));
-        }).catch(function (err) {
-          console.error('rate limit exceeded');
-          return err;
-        });
-      } else if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-        return Promise.reject(err);
-      } else {
-        console.error(err);
-        return Promise.reject(err);
-      }
+            if (this.datasource.basicAuth) {
+              options.headers.Authorization = this.datasource.basicAuth;
+            }
+
+            options.headers['Content-Type'] = 'application/json';
+            this.datasource.token--;
+
+            if (this.datasource.tokenTimer === null) {
+              this.datasource.tokenTimer = setInterval(function () {
+                _this.datasource.provideToken();
+              }, Math.ceil(1000 / this.datasource.MAX_AVAILABLE_TOKEN));
+            }
+
+            _a.label = 3;
+
+          case 3:
+            _a.trys.push([3, 5,, 9]);
+
+            return [4
+            /*yield*/
+            , this.backendSrv.datasourceRequest(options)];
+
+          case 4:
+            response = _a.sent();
+
+            if (response.data.status && response.data.status === 404) {
+              return [2
+              /*return*/
+              , Promise.reject(response)];
+            }
+
+            return [2
+            /*return*/
+            , response];
+
+          case 5:
+            err_5 = _a.sent();
+            if (!(err_5.data && err_5.data.code && err_5.data.code === 'rate.limit.exceeded')) return [3
+            /*break*/
+            , 7];
+            this.datasource.token = 0;
+            return [4
+            /*yield*/
+            , this.retryable(3, function (retryCount) {
+              return __awaiter(_this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                  switch (_a.label) {
+                    case 0:
+                      return [4
+                      /*yield*/
+                      , this.delay(this.calculateRetryWait(1000, retryCount))];
+
+                    case 1:
+                      _a.sent();
+
+                      return [2
+                      /*return*/
+                      , this.backendSrv.datasourceRequest(options)];
+                  }
+                });
+              });
+            }).catch(function (err) {
+              console.error('rate limit exceeded');
+              return err;
+            })];
+
+          case 6:
+            return [2
+            /*return*/
+            , _a.sent()];
+
+          case 7:
+            if (err_5.data && err_5.data.code && err_5.data.code === 'searchjob.jobid.invalid') {
+              return [2
+              /*return*/
+              , Promise.reject(err_5)];
+            } else {
+              console.error(err_5);
+              return [2
+              /*return*/
+              , Promise.reject(err_5)];
+            }
+
+            _a.label = 8;
+
+          case 8:
+            return [3
+            /*break*/
+            , 9];
+
+          case 9:
+            ;
+            return [2
+            /*return*/
+            ];
+        }
+      });
     });
   };
 
-  SumologicQuerier.prototype.delay = function (func, wait) {
-    return new Promise(function (resolve, reject) {
-      setTimeout(function () {
-        func().then(resolve, reject);
-      }, wait);
+  SumologicQuerier.prototype.delay = function (msec) {
+    return new Promise(function (resolve) {
+      return setTimeout(resolve, msec);
     });
   };
 
   SumologicQuerier.prototype.retryable = function (retryCount, func) {
-    var promise = Promise.reject({}).catch(function () {
-      return func(retryCount);
-    });
-
-    for (var i = 0; i < retryCount; i++) {
-      (function (i) {
-        promise = promise.catch(function (err) {
-          return func(i + 1);
+    return __awaiter(this, void 0, void 0, function () {
+      var promise, i;
+      return __generator(this, function (_a) {
+        promise = Promise.reject({}).catch(function () {
+          return func(retryCount);
         });
-      })(i);
-    }
 
-    return promise;
+        for (i = 0; i < retryCount; i++) {
+          (function (i) {
+            promise = promise.catch(function (err) {
+              return func(i + 1);
+            });
+          })(i);
+        }
+
+        return [2
+        /*return*/
+        , promise];
+      });
+    });
   };
 
   SumologicQuerier.prototype.calculateRetryWait = function (initialWait, retryCount) {
