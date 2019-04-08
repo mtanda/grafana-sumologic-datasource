@@ -195,57 +195,37 @@ export class SumologicQuerier {
                 }
                 break;
             case 'REQUEST_RESULTS':
-                if (this.format === 'time_series_records' || this.format === 'records') {
-                    let limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
-                    if (limit === 0) {
-                        return Observable.empty();
-                    }
-                    try {
-                        let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit);
-                        this.offset += response.data.records.length;
-                        if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-                            return Observable.from([response.data]);
-                        }
-                        return Observable.from([response.data])
-                            .concat(
-                                Observable.defer(() => {
-                                    return this.transition('REQUEST_STATUS');
-                                }).mergeMap((value: any) => value)
-                            );
-                    } catch (err) {
-                        if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                            return this.retry();
-                        } else {
-                            return Observable.throw(err);
-                        }
-                    };
-                } else if (this.format === 'messages') {
-                    let limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
-                    if (limit === 0) {
-                        return Observable.empty();
-                    }
-                    try {
-                        let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit);
-                        this.offset += response.data.messages.length;
-                        if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-                            return Observable.from([response.data]);
-                        }
-                        return Observable.from([response.data])
-                            .concat(
-                                Observable.defer(() => {
-                                    return this.transition('REQUEST_STATUS');
-                                }).mergeMap((value: any) => value)
-                            );
-                    } catch (err) {
-                        if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                            return this.retry();
-                        } else {
-                            return Observable.throw(err);
-                        }
-                    };
-                } else {
+                let format = this.format.slice(0, -1); // strip last 's'
+                if (this.format === 'time_series_records') {
+                    format = 'record';
+                }
+                if (!['record', 'message'].includes(format)) {
                     return Observable.throw({ message: 'unsupported type' });
                 }
+
+                let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+                if (limit === 0) {
+                    return Observable.empty();
+                }
+                try {
+                    let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
+                    this.offset += response.data[`${format}s`].length;
+                    if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                        return Observable.from([response.data]);
+                    }
+                    return Observable.from([response.data])
+                        .concat(
+                            Observable.defer(() => {
+                                return this.transition('REQUEST_STATUS');
+                            }).mergeMap((value: any) => value)
+                        );
+                } catch (err) {
+                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                        return this.retry();
+                    } else {
+                        return Observable.throw(err);
+                    }
+                };
                 break;
         }
         return Observable.throw({ message: 'unexpected status' });
