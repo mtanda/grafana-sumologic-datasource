@@ -92,9 +92,9 @@ export class SumologicDatasource {
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQuery(params, target.format, true)
+        return this.logQueryObservable(params, target.format)
           .mergeMap(value => value)
-          .scan((acc, one) => {
+          .scan((acc: any, one) => {
             acc.fields = one.fields;
             if (one.records) {
               acc.records = (acc.records || []).concat(one.records);
@@ -163,7 +163,7 @@ export class SumologicDatasource {
       });
   }
 
-  metricFindQuery(query) {
+  async metricFindQuery(query) {
     let range = this.timeSrv.timeRange();
 
     let recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
@@ -176,21 +176,20 @@ export class SumologicDatasource {
         to: String(this.convertTime(range.to, true)),
         timeZone: 'Etc/UTC'
       };
-      return this.logQuery(params, 'records', false).then((result) => {
-        if (_.isEmpty(result)) {
-          return [];
-        }
-        return result.records.map((r) => {
-          return {
-            text: r.map[recordKey],
-            value: r.map[recordKey]
-          };
-        })
-      });
+      let result = await this.logQuery(params, 'records');
+      if (_.isEmpty(result)) {
+        return [];
+      }
+      return result.records.map((r) => {
+        return {
+          text: r.map[recordKey],
+          value: r.map[recordKey]
+        };
+      })
     }
   }
 
-  annotationQuery(options) {
+  async annotationQuery(options) {
     let annotation = options.annotation;
     let query = annotation.query || '';
     let tagKeys = annotation.tagKeys || '';
@@ -206,45 +205,52 @@ export class SumologicDatasource {
       to: String(this.convertTime(options.range.to, true)),
       timeZone: 'Etc/UTC'
     };
-    return this.logQuery(params, 'messages', false).then((result) => {
-      if (_.isEmpty(result)) {
-        return [];
-      }
+    let result = await this.logQuery(params, 'messages');
+    if (_.isEmpty(result)) {
+      return [];
+    }
 
-      let eventList = result.messages.map((message) => {
-        let tags = _.chain(message.map)
-          .filter((v, k) => {
-            return _.includes(tagKeys, k);
-          }).value();
+    let eventList = result.messages.map((message) => {
+      let tags = _.chain(message.map)
+        .filter((v, k) => {
+          return _.includes(tagKeys, k);
+        }).value();
 
-        return {
-          annotation: annotation,
-          time: parseInt(message.map['_messagetime'], 10),
-          title: this.renderTemplate(titleFormat, message.map),
-          tags: tags,
-          text: this.renderTemplate(textFormat, message.map)
-        };
-      });
-
-      return eventList;
+      return {
+        annotation: annotation,
+        time: parseInt(message.map['_messagetime'], 10),
+        title: this.renderTemplate(titleFormat, message.map),
+        tags: tags,
+        text: this.renderTemplate(textFormat, message.map)
+      };
     });
+
+    return eventList;
   }
 
-  testDatasource() {
+  async testDatasource() {
     let params = {
       query: '| count _sourceCategory',
       from: (new Date()).getTime() - 10 * 60 * 1000,
       to: (new Date()).getTime(),
       timeZone: 'Etc/UTC'
     };
-    return this.logQuery(params, 'records', false).then((response) => {
+    try {
+      await this.logQuery(params, 'records');
       return { status: 'success', message: 'Data source is working', title: 'Success' };
-    });
+    } catch (err) {
+      return { status: 'error', message: 'Data source is not working', title: 'Error' };
+    }
   }
 
-  logQuery(params, format, useObservable): any {
-    let querier = new SumologicQuerier(params, format, this.timeoutSec, useObservable, this, this.backendSrv);
-    return querier.getResult();
+  async logQuery(params, format) {
+    let querier = new SumologicQuerier(params, format, this.timeoutSec, false, this, this.backendSrv);
+    return await querier.getResult();
+  }
+
+  logQueryObservable(params, format) {
+    let querier = new SumologicQuerier(params, format, this.timeoutSec, true, this, this.backendSrv);
+    return querier.getResultObservable();
   }
 
   transformDataToTable(data) {
