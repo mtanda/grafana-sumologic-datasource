@@ -14529,7 +14529,7 @@ function () {
 
   SumologicQuerier.prototype.loop = function () {
     return __awaiter(this, void 0, void 0, function () {
-      var now, _a, _b, _c, message, err_1, limit, response, limit, response;
+      var now, _a, _b, _c, message, err_1, format, limit, response;
 
       return __generator(this, function (_d) {
         switch (_d.label) {
@@ -14577,7 +14577,7 @@ function () {
 
             return [3
             /*break*/
-            , 15];
+            , 11];
 
           case 3:
             _b = this;
@@ -14665,23 +14665,33 @@ function () {
           case 8:
             return [3
             /*break*/
-            , 15];
-
-          case 9:
-            if (!(this.format === 'time_series_records' || this.format === 'records')) return [3
-            /*break*/
             , 11];
 
-            if (this.status.data.recordCount === 0) {
+          case 9:
+            format = this.format.slice(0, -1);
+
+            if (this.format === 'time_series_records') {
+              format = 'record';
+            }
+
+            if (!['record', 'message'].includes(format)) {
+              return [2
+              /*return*/
+              , Promise.reject({
+                message: 'unsupported type'
+              })];
+            }
+
+            if (this.status.data[format + "Count"] === 0) {
               return [2
               /*return*/
               , Promise.resolve([])];
             }
 
-            limit = Math.min(this.maximumOffset, this.status.data.recordCount);
+            limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]);
             return [4
             /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit)];
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=0&limit=") + limit)];
 
           case 10:
             response = _d.sent();
@@ -14690,40 +14700,6 @@ function () {
             , response.data];
 
           case 11:
-            if (!(this.format === 'messages')) return [3
-            /*break*/
-            , 13];
-
-            if (this.status.data.messageCount === 0) {
-              return [2
-              /*return*/
-              , Promise.resolve([])];
-            }
-
-            limit = Math.min(this.maximumOffset, this.status.data.messageCount);
-            return [4
-            /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit)];
-
-          case 12:
-            response = _d.sent();
-            return [2
-            /*return*/
-            , response.data];
-
-          case 13:
-            return [2
-            /*return*/
-            , Promise.reject({
-              message: 'unsupported type'
-            })];
-
-          case 14:
-            return [3
-            /*break*/
-            , 15];
-
-          case 15:
             return [2
             /*return*/
             , Promise.reject({
@@ -14736,7 +14712,7 @@ function () {
 
   SumologicQuerier.prototype.loopForObservable = function () {
     return __awaiter(this, void 0, void 0, function () {
-      var now, _a, _b, _c, prevMessageCount, prevRecordCount, err_2, limit, response, err_3, limit, response, err_4;
+      var now, _a, _b, _c, prevMessageCount, prevRecordCount, err_2, format, limit, response, err_3;
 
       var _this = this;
 
@@ -14786,7 +14762,7 @@ function () {
 
             return [3
             /*break*/
-            , 22];
+            , 15];
 
           case 3:
             _b = this;
@@ -14881,13 +14857,24 @@ function () {
           case 9:
             return [3
             /*break*/
-            , 22];
+            , 15];
 
           case 10:
-            if (!(this.format === 'time_series_records' || this.format === 'records')) return [3
-            /*break*/
-            , 15];
-            limit = Math.min(this.maximumOffset, this.status.data.recordCount) - this.offset;
+            format = this.format.slice(0, -1);
+
+            if (this.format === 'time_series_records') {
+              format = 'record';
+            }
+
+            if (!['record', 'message'].includes(format)) {
+              return [2
+              /*return*/
+              , _rxjs.Observable.throw({
+                message: 'unsupported type'
+              })];
+            }
+
+            limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
 
             if (limit === 0) {
               return [2
@@ -14902,11 +14889,11 @@ function () {
 
             return [4
             /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=' + this.offset + '&limit=' + limit)];
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=") + this.offset + '&limit=' + limit)];
 
           case 12:
             response = _d.sent();
-            this.offset += response.data.records.length;
+            this.offset += response.data[format + "s"].length;
 
             if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
               return [2
@@ -14943,83 +14930,9 @@ function () {
             ;
             return [3
             /*break*/
-            , 21];
+            , 15];
 
           case 15:
-            if (!(this.format === 'messages')) return [3
-            /*break*/
-            , 20];
-            limit = Math.min(this.maximumOffset, this.status.data.messageCount) - this.offset;
-
-            if (limit === 0) {
-              return [2
-              /*return*/
-              , _rxjs.Observable.empty()];
-            }
-
-            _d.label = 16;
-
-          case 16:
-            _d.trys.push([16, 18,, 19]);
-
-            return [4
-            /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=' + this.offset + '&limit=' + limit)];
-
-          case 17:
-            response = _d.sent();
-            this.offset += response.data.messages.length;
-
-            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-              return [2
-              /*return*/
-              , _rxjs.Observable.from([response.data])];
-            }
-
-            return [2
-            /*return*/
-            , _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
-              return _this.transition('REQUEST_STATUS');
-            }).mergeMap(function (value) {
-              return value;
-            }))];
-
-          case 18:
-            err_4 = _d.sent();
-
-            if (this.retryCount < 6 && err_4.data && err_4.data.code && err_4.data.code === 'searchjob.jobid.invalid') {
-              return [2
-              /*return*/
-              , this.retry()];
-            } else {
-              return [2
-              /*return*/
-              , _rxjs.Observable.throw(err_4)];
-            }
-
-            return [3
-            /*break*/
-            , 19];
-
-          case 19:
-            ;
-            return [3
-            /*break*/
-            , 21];
-
-          case 20:
-            return [2
-            /*return*/
-            , _rxjs.Observable.throw({
-              message: 'unsupported type'
-            })];
-
-          case 21:
-            return [3
-            /*break*/
-            , 22];
-
-          case 22:
             return [2
             /*return*/
             , _rxjs.Observable.throw({
@@ -15036,7 +14949,7 @@ function () {
     }
 
     return __awaiter(this, void 0, void 0, function () {
-      var options, response, err_5;
+      var options, response, err_4;
 
       var _this = this;
 
@@ -15109,8 +15022,8 @@ function () {
             , response];
 
           case 5:
-            err_5 = _a.sent();
-            if (!(err_5.data && err_5.data.code && err_5.data.code === 'rate.limit.exceeded')) return [3
+            err_4 = _a.sent();
+            if (!(err_4.data && err_4.data.code && err_4.data.code === 'rate.limit.exceeded')) return [3
             /*break*/
             , 7];
             this.datasource.token = 0;
@@ -15145,15 +15058,15 @@ function () {
             , _a.sent()];
 
           case 7:
-            if (err_5.data && err_5.data.code && err_5.data.code === 'searchjob.jobid.invalid') {
+            if (err_4.data && err_4.data.code && err_4.data.code === 'searchjob.jobid.invalid') {
               return [2
               /*return*/
-              , Promise.reject(err_5)];
+              , Promise.reject(err_4)];
             } else {
-              console.error(err_5);
+              console.error(err_4);
               return [2
               /*return*/
-              , Promise.reject(err_5)];
+              , Promise.reject(err_4)];
             }
 
             _a.label = 8;
