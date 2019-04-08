@@ -16,7 +16,6 @@ export class SumologicQuerier {
     retryCount: number;
     offset: number;
     maximumOffset: number;
-    startTime: Date;
     state: string;
     job: any;
     status: any;
@@ -36,196 +35,167 @@ export class SumologicQuerier {
     }
 
     async getResult() {
-        this.startTime = new Date();
+        const startTime = new Date();
         await this.delay(Math.random() * 1000);
-        return this.transition('CREATE_SEARCH_JOB');
-    }
-
-    getResultObservable() {
-        this.startTime = new Date();
-        return Observable.defer(async () => {
-            await this.delay(Math.random() * 1000);
-            return this.transition('CREATE_SEARCH_JOB');
-        });
-    }
-
-    transition(state) {
-        this.state = state;
-        this.retryCount = 0;
-        if (!this.useObservable) {
-            return this.loop();
-        } else {
-            return this.loopForObservable();
-        }
-    }
-
-    async retry() {
-        this.retryCount += 1;
-        await this.delay(this.calculateRetryWait(1000, this.retryCount));
-        if (!this.useObservable) {
-            return await this.loop();
-        } else {
-            return await this.loopForObservable();
-        }
-    }
-
-    async loop() {
+        this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
         if (this.job) {
             let now = new Date();
-            if (now.valueOf() - this.startTime.valueOf() > (this.timeoutSec * 1000)) {
+            if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
                 console.error('timeout');
                 await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
                 return Promise.reject({ message: 'timeout' });
             }
         }
 
-        switch (this.state) {
-            case 'CREATE_SEARCH_JOB':
-                this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
-                return this.transition('REQUEST_STATUS');
-                break;
-            case 'REQUEST_STATUS':
-                try {
-                    this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
-                    if (this.status.data.state !== 'DONE GATHERING RESULTS') {
-                        if (this.retryCount < 20) {
-                            return this.retry();
-                        } else {
-                            return Promise.reject({ message: 'max retries exceeded' });
-                        }
-                    }
-
-                    if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
-                        let message = '';
-                        if (!_.isEmpty(this.status.data.pendingErrors)) {
-                            message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
-                        }
-                        if (!_.isEmpty(this.status.data.pendingWarnings)) {
-                            message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
-                        }
-                        return Promise.reject({ message: message });
-                    }
-                    return this.transition('REQUEST_RESULTS');
-                } catch (err) {
-                    if (err.data && err.data.code && err.data.code === 'unauthorized') {
-                        return Promise.reject(err);
-                    }
-                    // need to wait until job is created and registered
-                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                        return this.retry();
-                    } else {
-                        return Promise.reject(err);
-                    }
-                }
-                break;
-            case 'REQUEST_RESULTS':
-                let format = this.format.slice(0, -1); // strip last 's'
-                if (this.format === 'time_series_records') {
-                    format = 'record';
-                }
-                if (!['record', 'message'].includes(format)) {
-                    return Promise.reject({ message: 'unsupported type' });
+        let i;
+        for (i = 0; i < 6; i++) {
+            try {
+                this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
+                if (this.status.data.state !== 'DONE GATHERING RESULTS') {
+                    await this.delay(this.calculateRetryWait(1000, i));
+                    continue;
                 }
 
-                if (this.status.data[`${format}Count`] === 0) {
-                    return Promise.resolve([]);
+                if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
+                    let message = '';
+                    if (!_.isEmpty(this.status.data.pendingErrors)) {
+                        message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
+                    }
+                    if (!_.isEmpty(this.status.data.pendingWarnings)) {
+                        message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
+                    }
+                    return Promise.reject({ message: message });
                 }
-                let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
-                let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=0&limit=` + limit);
-                return response.data;
                 break;
-        }
-        return Promise.reject({ message: 'unexpected status' });
-    }
-
-    async loopForObservable() {
-        if (this.job) {
-            let now = new Date();
-            if (now.valueOf() - this.startTime.valueOf() > (this.timeoutSec * 1000)) {
-                console.error('timeout');
-                await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
-                return Observable.throw({ message: 'timeout' });
+            } catch (err) {
+                if (err.data && err.data.code && err.data.code === 'unauthorized') {
+                    return Promise.reject(err);
+                }
+                // need to wait until job is created and registered
+                if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                    continue;
+                } else {
+                    return Promise.reject(err);
+                }
             }
         }
-
-        switch (this.state) {
-            case 'CREATE_SEARCH_JOB':
-                this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
-                return this.transition('REQUEST_STATUS');
-                break;
-            case 'REQUEST_STATUS':
-                try {
-                    this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
-                    let prevMessageCount = this.messageCount;
-                    let prevRecordCount = this.recordCount;
-                    this.messageCount = this.status.data.messageCount;
-                    this.recordCount = this.status.data.recordCount;
-
-                    if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
-                        return Observable.throw({ message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') });
-                    }
-
-                    if (this.status.data.state === 'DONE GATHERING RESULTS') {
-                        return this.transition('REQUEST_RESULTS');
-                    }
-
-                    if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
-                        return this.transition('REQUEST_RESULTS');
-                    }
-                    if (this.format === 'messages' && this.messageCount > prevMessageCount) {
-                        return this.transition('REQUEST_RESULTS');
-                    }
-
-                    // wait for new result arrival
-                    await this.delay(200);
-                    return this.transition('REQUEST_STATUS');
-                } catch (err) {
-                    if (err.data && err.data.code && err.data.code === 'unauthorized') {
-                        return Observable.throw(err);
-                    }
-                    // need to wait until job is created and registered
-                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                        return this.retry();
-                    } else {
-                        return Observable.throw(err);
-                    }
-                }
-                break;
-            case 'REQUEST_RESULTS':
-                let format = this.format.slice(0, -1); // strip last 's'
-                if (this.format === 'time_series_records') {
-                    format = 'record';
-                }
-                if (!['record', 'message'].includes(format)) {
-                    return Observable.throw({ message: 'unsupported type' });
-                }
-
-                let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
-                if (limit === 0) {
-                    return Observable.empty();
-                }
-                try {
-                    let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
-                    this.offset += response.data[`${format}s`].length;
-                    if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-                        return Observable.from([response.data]);
-                    }
-                    return Observable.from([response.data])
-                        .concat(
-                            Observable.defer(() => {
-                                return this.transition('REQUEST_STATUS');
-                            }).mergeMap((value: any) => value)
-                        );
-                } catch (err) {
-                    if (this.retryCount < 6 && err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
-                        return this.retry();
-                    } else {
-                        return Observable.throw(err);
-                    }
-                };
-                break;
+        if (i === 6) {
+            throw { message: 'max retries exceeded' };
         }
-        return Observable.throw({ message: 'unexpected status' });
+
+        for (i = 0; i < 6; i++) {
+            let format = this.format.slice(0, -1); // strip last 's'
+            if (this.format === 'time_series_records') {
+                format = 'record';
+            }
+            if (!['record', 'message'].includes(format)) {
+                return Promise.reject({ message: 'unsupported type' });
+            }
+
+            if (this.status.data[`${format}Count`] === 0) {
+                return Promise.resolve([]);
+            }
+            let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
+            let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=0&limit=` + limit);
+            return response.data;
+        }
+        if (i === 6) {
+            throw { message: 'max retries exceeded' };
+        }
+    }
+
+    getResultObservable() {
+        const startTime = new Date();
+        return new Observable((observer) => {
+            (async () => {
+                await this.delay(Math.random() * 1000);
+                this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+
+                while (true) {
+                    if (this.job) {
+                        let now = new Date();
+                        if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
+                            console.error('timeout');
+                            await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
+                            throw { message: 'timeout' };
+                        }
+                    }
+
+                    let i;
+                    for (i = 0; i < 6; i++) {
+                        try {
+                            this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
+                            let prevMessageCount = this.messageCount;
+                            let prevRecordCount = this.recordCount;
+                            this.messageCount = this.status.data.messageCount;
+                            this.recordCount = this.status.data.recordCount;
+
+                            if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
+                                throw { message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') };
+                            }
+
+                            if (this.status.data.state === 'DONE GATHERING RESULTS') {
+                                break;
+                            }
+
+                            if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
+                                break;
+                            }
+                            if (this.format === 'messages' && this.messageCount > prevMessageCount) {
+                                break;
+                            }
+
+                            // wait for new result arrival
+                            await this.delay(this.calculateRetryWait(1000, i));
+                            continue;
+                        } catch (err) {
+                            // need to wait until job is created and registered
+                            if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                                continue;
+                            } else {
+                                throw err;
+                            }
+                        }
+                    }
+                    if (i === 6) {
+                        throw { message: 'max retries exceeded' };
+                    }
+
+                    for (i = 0; i < 6; i++) {
+                        let format = this.format.slice(0, -1); // strip last 's'
+                        if (this.format === 'time_series_records') {
+                            format = 'record';
+                        }
+                        if (!['record', 'message'].includes(format)) {
+                            throw { message: 'unsupported type' };
+                        }
+
+                        let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+                        if (limit === 0) {
+                            return Observable.empty();
+                        }
+                        try {
+                            let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
+                            this.offset += response.data[`${format}s`].length;
+                            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                                return observer.next(response.data);
+                            }
+                            observer.next(response.data)
+                            break;
+                        } catch (err) {
+                            if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                                continue;
+                            } else {
+                                throw err;
+                            }
+                        };
+                    }
+                    if (i === 6) {
+                        throw { message: 'max retries exceeded' };
+                    }
+                }
+            })();
+        });
     }
 
     async doRequest(method, path, params = {}) {
