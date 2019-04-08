@@ -119,23 +119,20 @@ export class SumologicQuerier {
                 }
                 break;
             case 'REQUEST_RESULTS':
-                if (this.format === 'time_series_records' || this.format === 'records') {
-                    if (this.status.data.recordCount === 0) {
-                        return Promise.resolve([]);
-                    }
-                    let limit = Math.min(this.maximumOffset, this.status.data.recordCount);
-                    let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/records?offset=0&limit=' + limit);
-                    return response.data;
-                } else if (this.format === 'messages') {
-                    if (this.status.data.messageCount === 0) {
-                        return Promise.resolve([]);
-                    }
-                    let limit = Math.min(this.maximumOffset, this.status.data.messageCount);
-                    let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + '/messages?offset=0&limit=' + limit);
-                    return response.data;
-                } else {
+                let format = this.format.slice(0, -1); // strip last 's'
+                if (this.format === 'time_series_records') {
+                    format = 'record';
+                }
+                if (!['record', 'message'].includes(format)) {
                     return Promise.reject({ message: 'unsupported type' });
                 }
+
+                if (this.status.data[`${format}Count`] === 0) {
+                    return Promise.resolve([]);
+                }
+                let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
+                let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=0&limit=` + limit);
+                return response.data;
                 break;
         }
         return Promise.reject({ message: 'unexpected status' });
