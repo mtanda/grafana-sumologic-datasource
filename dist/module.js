@@ -14282,10 +14282,14 @@ function () {
                 message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
               }
 
-              throw {
-                job_id: job.data.id,
-                message: message
-              };
+              console.error(message);
+
+              if (this.status.data.pendingWarnings[0] !== 'Messages may have been omitted from your results due to a regex that performs poorly against your data.') {
+                throw {
+                  job_id: job.data.id,
+                  message: message
+                };
+              }
             }
 
             return [3
@@ -14430,7 +14434,7 @@ function () {
     return new _rxjs.Observable(function (observer) {
       (function () {
         return __awaiter(_this, void 0, void 0, function () {
-          var format, i, job, err_4, now, i_1, _a, prevMessageCount, prevRecordCount, err_5, limit, response, err_6;
+          var format, i, job, err_4, now, i_1, _a, prevMessageCount, prevRecordCount, message, err_5, limit, response, err_6;
 
           return __generator(this, function (_b) {
             switch (_b.label) {
@@ -14555,10 +14559,24 @@ function () {
                 this.recordCount = this.status.data.recordCount;
 
                 if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
-                  throw {
-                    job_id: job.data.id,
-                    message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n')
-                  };
+                  message = '';
+
+                  if (!_lodash2.default.isEmpty(this.status.data.pendingErrors)) {
+                    message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
+                  }
+
+                  if (!_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+                    message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
+                  }
+
+                  console.error(message);
+
+                  if (this.status.data.pendingWarnings[0] !== 'Messages may have been omitted from your results due to a regex that performs poorly against your data.') {
+                    throw {
+                      job_id: job.data.id,
+                      message: message
+                    };
+                  }
                 }
 
                 if (this.status.data.state === 'DONE GATHERING RESULTS') {
@@ -14610,6 +14628,7 @@ function () {
 
               case 17:
                 this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+                console.error(err_5);
                 throw err_5;
 
               case 18:
@@ -14694,6 +14713,7 @@ function () {
 
               case 26:
                 this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+                console.error(err_6);
                 throw err_6;
 
               case 27:
