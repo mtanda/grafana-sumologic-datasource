@@ -73,6 +73,7 @@ export class SumologicQuerier {
             } catch (err) {
                 // need to wait until job is created and registered
                 if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                    await this.delay(this.calculateRetryWait(1000, i));
                     continue;
                 } else {
                     this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
@@ -187,6 +188,7 @@ export class SumologicQuerier {
                         } catch (err) {
                             // need to wait until job is created and registered
                             if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                                await this.delay(this.calculateRetryWait(1000, i));
                                 continue;
                             } else {
                                 this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
@@ -219,6 +221,7 @@ export class SumologicQuerier {
                             break;
                         } catch (err) {
                             if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
+                                await this.delay(this.calculateRetryWait(1000, i));
                                 continue;
                             } else {
                                 this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
