@@ -51,7 +51,7 @@ export class SumologicQuerier {
             continue;
         }
         if (i === 6) {
-            throw { message: 'max retries exceeded' };
+            throw { job_id: job.data.id, message: 'max retries exceeded' };
         }
 
         for (i = 0; i < 6; i++) {
@@ -70,7 +70,7 @@ export class SumologicQuerier {
                     if (!_.isEmpty(this.status.data.pendingWarnings)) {
                         message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
                     }
-                    throw { message: message };
+                    throw { job_id: job.data.id, message: message };
                 }
 
                 break;
@@ -87,7 +87,7 @@ export class SumologicQuerier {
         }
         if (i === 6) {
             this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
-            throw { message: 'max retries exceeded' };
+            throw { job_id: job.data.id, message: 'max retries exceeded' };
         }
 
         let result: any = {};
@@ -120,7 +120,7 @@ export class SumologicQuerier {
         }
         if (i === 6) {
             this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
-            throw { message: 'max retries exceeded' };
+            throw { job_id: job.data.id, message: 'max retries exceeded' };
         }
 
         try {
@@ -159,7 +159,7 @@ export class SumologicQuerier {
                     continue;
                 }
                 if (i === 6) {
-                    throw { message: 'max retries exceeded' };
+                    throw { job_id: job.data.id, message: 'max retries exceeded' };
                 }
 
                 while (true) {
@@ -167,7 +167,7 @@ export class SumologicQuerier {
                     if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
                         console.error('timeout');
                         this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
-                        throw { message: 'timeout' };
+                        throw { job_id: job.data.id, message: 'timeout' };
                     }
 
                     let i;
@@ -180,7 +180,7 @@ export class SumologicQuerier {
                             this.recordCount = this.status.data.recordCount;
 
                             if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
-                                throw { message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') };
+                                throw { job_id: job.data.id, message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') };
                             }
 
                             if (this.status.data.state === 'DONE GATHERING RESULTS') {
@@ -210,7 +210,7 @@ export class SumologicQuerier {
                     }
                     if (i === 6) {
                         this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
-                        throw { message: 'max retries exceeded' };
+                        throw { job_id: job.data.id, message: 'max retries exceeded' };
                     }
 
                     for (i = 0; i < 6; i++) {
@@ -243,7 +243,7 @@ export class SumologicQuerier {
                     }
                     if (i === 6) {
                         this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
-                        throw { message: 'max retries exceeded' };
+                        throw { job_id: job.data.id, message: 'max retries exceeded' };
                     }
                 }
             })();
