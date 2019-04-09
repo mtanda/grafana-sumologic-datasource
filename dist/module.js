@@ -14232,6 +14232,7 @@ function () {
           case 9:
             if (i === 6) {
               throw {
+                job_id: job.data.id,
                 message: 'max retries exceeded'
               };
             }
@@ -14282,6 +14283,7 @@ function () {
               }
 
               throw {
+                job_id: job.data.id,
                 message: message
               };
             }
@@ -14327,6 +14329,7 @@ function () {
             if (i === 6) {
               this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
               throw {
+                job_id: job.data.id,
                 message: 'max retries exceeded'
               };
             }
@@ -14402,6 +14405,7 @@ function () {
             if (i === 6) {
               this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
               throw {
+                job_id: job.data.id,
                 message: 'max retries exceeded'
               };
             }
@@ -14505,6 +14509,7 @@ function () {
               case 9:
                 if (i === 6) {
                   throw {
+                    job_id: job.data.id,
                     message: 'max retries exceeded'
                   };
                 }
@@ -14519,6 +14524,7 @@ function () {
                   console.error('timeout');
                   this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
+                    job_id: job.data.id,
                     message: 'timeout'
                   };
                 }
@@ -14550,6 +14556,7 @@ function () {
 
                 if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
                   throw {
+                    job_id: job.data.id,
                     message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n')
                   };
                 }
@@ -14620,6 +14627,7 @@ function () {
                 if (i_1 === 6) {
                   this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
+                    job_id: job.data.id,
                     message: 'max retries exceeded'
                   };
                 }
@@ -14707,6 +14715,7 @@ function () {
                 if (i_1 === 6) {
                   this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
+                    job_id: job.data.id,
                     message: 'max retries exceeded'
                   };
                 }
