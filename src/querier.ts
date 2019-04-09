@@ -27,6 +27,14 @@ export class SumologicQuerier {
     }
 
     async getResult() {
+        let format = this.format.slice(0, -1); // strip last 's'
+        if (this.format === 'time_series_records') {
+            format = 'record';
+        }
+        if (!['record', 'message'].includes(format)) {
+            return Promise.reject({ message: 'unsupported type' });
+        }
+
         await this.delay(Math.random() * 1000);
         let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
 
@@ -65,18 +73,10 @@ export class SumologicQuerier {
         }
 
         for (i = 0; i < 6; i++) {
-            let format = this.format.slice(0, -1); // strip last 's'
-            if (this.format === 'time_series_records') {
-                format = 'record';
-            }
-            if (!['record', 'message'].includes(format)) {
-                return Promise.reject({ message: 'unsupported type' });
-            }
-
             if (this.status.data[`${format}Count`] === 0) {
                 return Promise.resolve([]);
             }
-            let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
+            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
             let response = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id + `/${format}s?offset=0&limit=` + limit);
             return response.data;
         }
