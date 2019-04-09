@@ -70,7 +70,10 @@ export class SumologicQuerier {
                     if (!_.isEmpty(this.status.data.pendingWarnings)) {
                         message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
                     }
-                    throw { job_id: job.data.id, message: message };
+                    console.error(message);
+                    if (this.status.data.pendingWarnings[0] !== 'Messages may have been omitted from your results due to a regex that performs poorly against your data.') {
+                        throw { job_id: job.data.id, message: message };
+                    }
                 }
 
                 break;
@@ -180,7 +183,17 @@ export class SumologicQuerier {
                             this.recordCount = this.status.data.recordCount;
 
                             if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
-                                throw { job_id: job.data.id, message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n') };
+                                let message = '';
+                                if (!_.isEmpty(this.status.data.pendingErrors)) {
+                                    message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
+                                }
+                                if (!_.isEmpty(this.status.data.pendingWarnings)) {
+                                    message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
+                                }
+                                console.error(message);
+                                if (this.status.data.pendingWarnings[0] !== 'Messages may have been omitted from your results due to a regex that performs poorly against your data.') {
+                                    throw { job_id: job.data.id, message: message };
+                                }
                             }
 
                             if (this.status.data.state === 'DONE GATHERING RESULTS') {
@@ -204,6 +217,7 @@ export class SumologicQuerier {
                                 continue;
                             } else {
                                 this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                                console.error(err);
                                 throw err;
                             }
                         }
@@ -237,6 +251,7 @@ export class SumologicQuerier {
                                 continue;
                             } else {
                                 this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                                console.error(err);
                                 throw err;
                             }
                         };
