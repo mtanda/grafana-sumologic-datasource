@@ -6,7 +6,6 @@ import { Observable } from 'rxjs';
 import 'rxjs/add/observable/combineLatest';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/scan';
-import 'rxjs/add/operator/mergeMap';
 
 
 export class SumologicDatasource {

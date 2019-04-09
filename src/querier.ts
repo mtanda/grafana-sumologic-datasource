@@ -1,10 +1,6 @@
 import _ from 'lodash';
 import { Observable } from 'rxjs';
 import 'rxjs/add/observable/empty';
-import 'rxjs/add/observable/from';
-import 'rxjs/add/observable/defer';
-import 'rxjs/add/operator/concat';
-import 'rxjs/add/operator/mergeMap';
 
 export class SumologicQuerier {
     params: any;
