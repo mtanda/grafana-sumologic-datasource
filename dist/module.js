@@ -14151,7 +14151,7 @@ function () {
 
   SumologicQuerier.prototype.getResult = function () {
     return __awaiter(this, void 0, void 0, function () {
-      var format, i, job, _a, message, err_1, result, limit, response;
+      var format, i, job, err_1, _a, message, err_2, result, limit, response, err_3;
 
       return __generator(this, function (_b) {
         switch (_b.label) {
@@ -14183,38 +14183,53 @@ function () {
           case 2:
             if (!(i < 6)) return [3
             /*break*/
-            , 6];
+            , 9];
+            _b.label = 3;
+
+          case 3:
+            _b.trys.push([3, 5,, 6]);
+
             return [4
             /*yield*/
             , this.doRequest('POST', '/v1/search/jobs', this.params)];
 
-          case 3:
+          case 4:
             job = _b.sent();
+            return [3
+            /*break*/
+            , 6];
 
+          case 5:
+            err_1 = _b.sent();
+            return [3
+            /*break*/
+            , 6];
+
+          case 6:
             if (job.data && job.data.id) {
               return [3
               /*break*/
-              , 6];
+              , 9];
             }
 
             return [4
             /*yield*/
             , this.delay(this.calculateRetryWait(1000, i))];
 
-          case 4:
+          case 7:
             _b.sent();
 
             return [3
             /*break*/
-            , 5];
+            , 8];
 
-          case 5:
+          case 8:
             i++;
             return [3
             /*break*/
             , 2];
 
-          case 6:
+          case 9:
             if (i === 6) {
               throw {
                 message: 'max retries exceeded'
@@ -14222,39 +14237,39 @@ function () {
             }
 
             i = 0;
-            _b.label = 7;
+            _b.label = 10;
 
-          case 7:
+          case 10:
             if (!(i < 6)) return [3
             /*break*/
-            , 17];
-            _b.label = 8;
+            , 20];
+            _b.label = 11;
 
-          case 8:
-            _b.trys.push([8, 12,, 16]);
+          case 11:
+            _b.trys.push([11, 15,, 19]);
 
             _a = this;
             return [4
             /*yield*/
             , this.doRequest('GET', "/v1/search/jobs/" + job.data.id)];
 
-          case 9:
+          case 12:
             _a.status = _b.sent();
             if (!(this.status.data.state !== 'DONE GATHERING RESULTS')) return [3
             /*break*/
-            , 11];
+            , 14];
             return [4
             /*yield*/
             , this.delay(this.calculateRetryWait(1000, i))];
 
-          case 10:
+          case 13:
             _b.sent();
 
             return [3
             /*break*/
-            , 16];
+            , 19];
 
-          case 11:
+          case 14:
             if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
               message = '';
 
@@ -14273,42 +14288,42 @@ function () {
 
             return [3
             /*break*/
-            , 17];
+            , 20];
 
-          case 12:
-            err_1 = _b.sent();
-            if (!(err_1.data && err_1.data.code && err_1.data.code === 'searchjob.jobid.invalid')) return [3
+          case 15:
+            err_2 = _b.sent();
+            if (!(err_2.data && err_2.data.code && err_2.data.code === 'searchjob.jobid.invalid')) return [3
             /*break*/
-            , 14];
+            , 17];
             return [4
             /*yield*/
             , this.delay(this.calculateRetryWait(1000, i))];
 
-          case 13:
+          case 16:
             _b.sent();
 
             return [3
             /*break*/
-            , 16];
+            , 19];
 
-          case 14:
+          case 17:
             this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
             return [2
             /*return*/
-            , Promise.reject(err_1)];
+            , Promise.reject(err_2)];
 
-          case 15:
+          case 18:
             return [3
             /*break*/
-            , 16];
+            , 19];
 
-          case 16:
+          case 19:
             i++;
             return [3
             /*break*/
-            , 7];
+            , 10];
 
-          case 17:
+          case 20:
             if (i === 6) {
               this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
               throw {
@@ -14318,17 +14333,21 @@ function () {
 
             result = {};
             i = 0;
-            _b.label = 18;
+            _b.label = 21;
 
-          case 18:
+          case 21:
             if (!(i < 6)) return [3
             /*break*/
-            , 21];
+            , 26];
+            _b.label = 22;
+
+          case 22:
+            _b.trys.push([22, 24,, 25]);
 
             if (this.status.data[format + "Count"] === 0) {
               return [3
               /*break*/
-              , 21];
+              , 26];
             }
 
             limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
@@ -14336,14 +14355,14 @@ function () {
             if (limit === 0) {
               return [3
               /*break*/
-              , 21];
+              , 26];
             }
 
             return [4
             /*yield*/
             , this.doRequest('GET', "/v1/search/jobs/" + job.data.id + "/" + format + "s?offset=" + this.offset + "&limit=" + limit)];
 
-          case 19:
+          case 23:
             response = _b.sent();
             this.offset += response.data[format + "s"].length;
 
@@ -14360,18 +14379,26 @@ function () {
             if (this.offset >= Math.min(this.maximumOffset, this.status.data[format + "Count"])) {
               return [3
               /*break*/
-              , 21];
+              , 26];
             }
 
-            _b.label = 20;
+            return [3
+            /*break*/
+            , 25];
 
-          case 20:
+          case 24:
+            err_3 = _b.sent();
+            return [3
+            /*break*/
+            , 25];
+
+          case 25:
             i++;
             return [3
             /*break*/
-            , 18];
+            , 21];
 
-          case 21:
+          case 26:
             if (i === 6) {
               this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
               throw {
@@ -14399,7 +14426,7 @@ function () {
     return new _rxjs.Observable(function (observer) {
       (function () {
         return __awaiter(_this, void 0, void 0, function () {
-          var format, i, job, now, i_1, _a, prevMessageCount, prevRecordCount, err_2, limit, response, err_3;
+          var format, i, job, err_4, now, i_1, _a, prevMessageCount, prevRecordCount, err_5, limit, response, err_6;
 
           return __generator(this, function (_b) {
             switch (_b.label) {
@@ -14429,47 +14456,62 @@ function () {
               case 2:
                 if (!(i < 6)) return [3
                 /*break*/
-                , 6];
+                , 9];
+                _b.label = 3;
+
+              case 3:
+                _b.trys.push([3, 5,, 6]);
+
                 return [4
                 /*yield*/
                 , this.doRequest('POST', '/v1/search/jobs', this.params)];
 
-              case 3:
+              case 4:
                 job = _b.sent();
+                return [3
+                /*break*/
+                , 6];
 
+              case 5:
+                err_4 = _b.sent();
+                return [3
+                /*break*/
+                , 6];
+
+              case 6:
                 if (job.data && job.data.id) {
                   return [3
                   /*break*/
-                  , 6];
+                  , 9];
                 }
 
                 return [4
                 /*yield*/
                 , this.delay(this.calculateRetryWait(1000, i))];
 
-              case 4:
+              case 7:
                 _b.sent();
 
                 return [3
                 /*break*/
-                , 5];
+                , 8];
 
-              case 5:
+              case 8:
                 i++;
                 return [3
                 /*break*/
                 , 2];
 
-              case 6:
+              case 9:
                 if (i === 6) {
                   throw {
                     message: 'max retries exceeded'
                   };
                 }
 
-                _b.label = 7;
+                _b.label = 10;
 
-              case 7:
+              case 10:
                 if (false) {}
                 now = new Date();
 
@@ -14483,23 +14525,23 @@ function () {
 
                 i_1 = void 0;
                 i_1 = 0;
-                _b.label = 8;
+                _b.label = 11;
 
-              case 8:
+              case 11:
                 if (!(i_1 < 6)) return [3
                 /*break*/
-                , 17];
-                _b.label = 9;
+                , 20];
+                _b.label = 12;
 
-              case 9:
-                _b.trys.push([9, 12,, 16]);
+              case 12:
+                _b.trys.push([12, 15,, 19]);
 
                 _a = this;
                 return [4
                 /*yield*/
                 , this.doRequest('GET', "/v1/search/jobs/" + job.data.id)];
 
-              case 10:
+              case 13:
                 _a.status = _b.sent();
                 prevMessageCount = this.messageCount;
                 prevRecordCount = this.recordCount;
@@ -14515,19 +14557,19 @@ function () {
                 if (this.status.data.state === 'DONE GATHERING RESULTS') {
                   return [3
                   /*break*/
-                  , 17];
+                  , 20];
                 }
 
                 if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
                   return [3
                   /*break*/
-                  , 17];
+                  , 20];
                 }
 
                 if (this.format === 'messages' && this.messageCount > prevMessageCount) {
                   return [3
                   /*break*/
-                  , 17];
+                  , 20];
                 } // wait for new result arrival
 
 
@@ -14535,46 +14577,46 @@ function () {
                 /*yield*/
                 , this.delay(this.calculateRetryWait(1000, i_1))];
 
-              case 11:
+              case 14:
                 // wait for new result arrival
                 _b.sent();
 
                 return [3
                 /*break*/
-                , 16];
+                , 19];
 
-              case 12:
-                err_2 = _b.sent();
-                if (!(err_2.data && err_2.data.code && err_2.data.code === 'searchjob.jobid.invalid')) return [3
+              case 15:
+                err_5 = _b.sent();
+                if (!(err_5.data && err_5.data.code && err_5.data.code === 'searchjob.jobid.invalid')) return [3
                 /*break*/
-                , 14];
+                , 17];
                 return [4
                 /*yield*/
                 , this.delay(this.calculateRetryWait(1000, i_1))];
 
-              case 13:
+              case 16:
                 _b.sent();
 
                 return [3
                 /*break*/
-                , 16];
+                , 19];
 
-              case 14:
+              case 17:
                 this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
-                throw err_2;
+                throw err_5;
 
-              case 15:
+              case 18:
                 return [3
                 /*break*/
-                , 16];
+                , 19];
 
-              case 16:
+              case 19:
                 i_1++;
                 return [3
                 /*break*/
-                , 8];
+                , 11];
 
-              case 17:
+              case 20:
                 if (i_1 === 6) {
                   this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
@@ -14583,12 +14625,12 @@ function () {
                 }
 
                 i_1 = 0;
-                _b.label = 18;
+                _b.label = 21;
 
-              case 18:
+              case 21:
                 if (!(i_1 < 6)) return [3
                 /*break*/
-                , 27];
+                , 30];
                 limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
 
                 if (limit === 0) {
@@ -14597,16 +14639,16 @@ function () {
                   , _rxjs.Observable.empty()];
                 }
 
-                _b.label = 19;
+                _b.label = 22;
 
-              case 19:
-                _b.trys.push([19, 21,, 25]);
+              case 22:
+                _b.trys.push([22, 24,, 28]);
 
                 return [4
                 /*yield*/
                 , this.doRequest('GET', "/v1/search/jobs/" + job.data.id + "/" + format + "s?offset=" + this.offset + "&limit=" + limit)];
 
-              case 20:
+              case 23:
                 response = _b.sent();
                 this.offset += response.data[format + "s"].length;
 
@@ -14624,44 +14666,44 @@ function () {
                 observer.next(response.data);
                 return [3
                 /*break*/
-                , 27];
+                , 30];
 
-              case 21:
-                err_3 = _b.sent();
-                if (!(err_3.data && err_3.data.code && err_3.data.code === 'searchjob.jobid.invalid')) return [3
+              case 24:
+                err_6 = _b.sent();
+                if (!(err_6.data && err_6.data.code && err_6.data.code === 'searchjob.jobid.invalid')) return [3
                 /*break*/
-                , 23];
+                , 26];
                 return [4
                 /*yield*/
                 , this.delay(this.calculateRetryWait(1000, i_1))];
 
-              case 22:
+              case 25:
                 _b.sent();
 
                 return [3
                 /*break*/
-                , 26];
-
-              case 23:
-                this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
-                throw err_3;
-
-              case 24:
-                return [3
-                /*break*/
-                , 25];
-
-              case 25:
-                ;
-                _b.label = 26;
+                , 29];
 
               case 26:
+                this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+                throw err_6;
+
+              case 27:
+                return [3
+                /*break*/
+                , 28];
+
+              case 28:
+                ;
+                _b.label = 29;
+
+              case 29:
                 i_1++;
                 return [3
                 /*break*/
-                , 18];
+                , 21];
 
-              case 27:
+              case 30:
                 if (i_1 === 6) {
                   this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
@@ -14671,9 +14713,9 @@ function () {
 
                 return [3
                 /*break*/
-                , 7];
+                , 10];
 
-              case 28:
+              case 31:
                 return [2
                 /*return*/
                 ];
@@ -14690,7 +14732,7 @@ function () {
     }
 
     return __awaiter(this, void 0, void 0, function () {
-      var options, response, err_4;
+      var options, response, err_7;
 
       var _this = this;
 
@@ -14763,8 +14805,8 @@ function () {
             , response];
 
           case 5:
-            err_4 = _a.sent();
-            if (!(err_4.data && err_4.data.code && err_4.data.code === 'rate.limit.exceeded')) return [3
+            err_7 = _a.sent();
+            if (!(err_7.data && err_7.data.code && err_7.data.code === 'rate.limit.exceeded')) return [3
             /*break*/
             , 7];
             this.datasource.token = 0;
@@ -14799,15 +14841,15 @@ function () {
             , _a.sent()];
 
           case 7:
-            if (err_4.data && err_4.data.code && err_4.data.code === 'searchjob.jobid.invalid') {
+            if (err_7.data && err_7.data.code && err_7.data.code === 'searchjob.jobid.invalid') {
               return [2
               /*return*/
-              , Promise.reject(err_4)];
+              , Promise.reject(err_7)];
             } else {
-              console.error(err_4);
+              console.error(err_7);
               return [2
               /*return*/
-              , Promise.reject(err_4)];
+              , Promise.reject(err_7)];
             }
 
             _a.label = 8;
