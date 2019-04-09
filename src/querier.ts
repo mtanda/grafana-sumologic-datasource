@@ -109,13 +109,11 @@ export class SumologicQuerier {
                 let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
 
                 while (true) {
-                    if (job) {
-                        let now = new Date();
-                        if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
-                            console.error('timeout');
-                            await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
-                            throw { message: 'timeout' };
-                        }
+                    let now = new Date();
+                    if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
+                        console.error('timeout');
+                        await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                        throw { message: 'timeout' };
                     }
 
                     let i;
