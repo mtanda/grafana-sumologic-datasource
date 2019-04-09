@@ -55,7 +55,7 @@ export class SumologicQuerier {
                     if (!_.isEmpty(this.status.data.pendingWarnings)) {
                         message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
                     }
-                    return Promise.reject({ message: message });
+                    throw { message: message };
                 }
 
                 break;
@@ -64,22 +64,24 @@ export class SumologicQuerier {
                 if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                     continue;
                 } else {
+                    await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                     return Promise.reject(err);
                 }
             }
         }
         if (i === 6) {
+            await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { message: 'max retries exceeded' };
         }
 
         let result: any;
         for (i = 0; i < 6; i++) {
             if (this.status.data[`${format}Count`] === 0) {
-                return Promise.resolve([]);
+                break;
             }
             const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
             if (limit === 0) {
-                return Promise.resolve([]);
+                break;
             }
             let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
             this.offset += response.data[`${format}s`].length;
@@ -93,12 +95,15 @@ export class SumologicQuerier {
                 result = response;
             }
             if (Math.min(this.maximumOffset, this.status.data[`${format}Count`]) <= this.offset) {
-                return result.data;
+                break;
             }
         }
         if (i === 6) {
+            await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { message: 'max retries exceeded' };
         }
+
+        return result.data;
     }
 
     getResultObservable() {
