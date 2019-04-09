@@ -36,9 +36,20 @@ export class SumologicQuerier {
         }
 
         await this.delay(Math.random() * 1000);
-        let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
-
         let i;
+        let job;
+        for (i = 0; i < 6; i++) {
+            job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+            if (job.data && job.data.id) {
+                break;
+            }
+            await this.delay(this.calculateRetryWait(1000, i));
+            continue;
+        }
+        if (i === 6) {
+            throw { message: 'max retries exceeded' };
+        }
+
         for (i = 0; i < 6; i++) {
             try {
                 this.status = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}`);
@@ -124,7 +135,19 @@ export class SumologicQuerier {
                 }
 
                 await this.delay(Math.random() * 1000);
-                let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+                let i;
+                let job;
+                for (i = 0; i < 6; i++) {
+                    job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+                    if (job.data && job.data.id) {
+                        break;
+                    }
+                    await this.delay(this.calculateRetryWait(1000, i));
+                    continue;
+                }
+                if (i === 6) {
+                    throw { message: 'max retries exceeded' };
+                }
 
                 while (true) {
                     let now = new Date();
