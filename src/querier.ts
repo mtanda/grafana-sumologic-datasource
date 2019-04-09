@@ -12,14 +12,11 @@ export class SumologicQuerier {
     timeoutSec: number;
     datasource: any;
     backendSrv: any;
-    retryCount: number;
     offset: number;
     maximumOffset: number;
-    state: string;
-    job: any;
-    status: any;
     messageCount: number;
     recordCount: number;
+    status: any;
 
     constructor(params, format, timeoutSec, datasource, backendSrv) {
         this.params = params;
@@ -27,20 +24,21 @@ export class SumologicQuerier {
         this.timeoutSec = timeoutSec;
         this.datasource = datasource;
         this.backendSrv = backendSrv;
-        this.retryCount = 0;
         this.offset = 0;
         this.maximumOffset = 10000;
+        this.messageCount = 0;
+        this.recordCount = 0;
     }
 
     async getResult() {
         const startTime = new Date();
         await this.delay(Math.random() * 1000);
-        this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
-        if (this.job) {
+        let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+        if (job) {
             let now = new Date();
             if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
                 console.error('timeout');
-                await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
+                await this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id);
                 return Promise.reject({ message: 'timeout' });
             }
         }
@@ -48,7 +46,7 @@ export class SumologicQuerier {
         let i;
         for (i = 0; i < 6; i++) {
             try {
-                this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
+                this.status = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id);
                 if (this.status.data.state !== 'DONE GATHERING RESULTS') {
                     await this.delay(this.calculateRetryWait(1000, i));
                     continue;
@@ -94,7 +92,7 @@ export class SumologicQuerier {
                 return Promise.resolve([]);
             }
             let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
-            let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=0&limit=` + limit);
+            let response = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id + `/${format}s?offset=0&limit=` + limit);
             return response.data;
         }
         if (i === 6) {
@@ -107,14 +105,14 @@ export class SumologicQuerier {
         return new Observable((observer) => {
             (async () => {
                 await this.delay(Math.random() * 1000);
-                this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+                let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
 
                 while (true) {
-                    if (this.job) {
+                    if (job) {
                         let now = new Date();
                         if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
                             console.error('timeout');
-                            await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
+                            await this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id);
                             throw { message: 'timeout' };
                         }
                     }
@@ -122,7 +120,7 @@ export class SumologicQuerier {
                     let i;
                     for (i = 0; i < 6; i++) {
                         try {
-                            this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
+                            this.status = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id);
                             let prevMessageCount = this.messageCount;
                             let prevRecordCount = this.recordCount;
                             this.messageCount = this.status.data.messageCount;
@@ -173,7 +171,7 @@ export class SumologicQuerier {
                             return Observable.empty();
                         }
                         try {
-                            let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
+                            let response = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
                             this.offset += response.data[`${format}s`].length;
                             if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
                                 return observer.next(response.data);
