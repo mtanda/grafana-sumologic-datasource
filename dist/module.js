@@ -13491,7 +13491,7 @@ function () {
     this.url = instanceSettings.url;
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
-    this.timeoutSec = instanceSettings.jsonData.timeout || 30;
+    this.timeoutSec = instanceSettings.jsonData.timeout || 180;
     this.$q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
@@ -13557,9 +13557,7 @@ function () {
         }
       }
 
-      return _this.logQueryObservable(params, target.format).mergeMap(function (value) {
-        return value;
-      }).scan(function (acc, one) {
+      return _this.logQueryObservable(params, target.format).scan(function (acc, one) {
         acc.fields = one.fields;
 
         if (one.records) {
@@ -14433,121 +14431,40 @@ function () {
 
   SumologicQuerier.prototype.getResult = function () {
     return __awaiter(this, void 0, void 0, function () {
-      return __generator(this, function (_a) {
-        switch (_a.label) {
+      var startTime, _a, now, i, _b, message, err_1, format, limit, response;
+
+      return __generator(this, function (_c) {
+        switch (_c.label) {
           case 0:
-            this.startTime = new Date();
+            startTime = new Date();
             return [4
             /*yield*/
             , this.delay(Math.random() * 1000)];
 
           case 1:
-            _a.sent();
+            _c.sent();
 
-            return [2
-            /*return*/
-            , this.transition('CREATE_SEARCH_JOB')];
-        }
-      });
-    });
-  };
-
-  SumologicQuerier.prototype.getResultObservable = function () {
-    var _this = this;
-
-    this.startTime = new Date();
-    return _rxjs.Observable.defer(function () {
-      return __awaiter(_this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-          switch (_a.label) {
-            case 0:
-              return [4
-              /*yield*/
-              , this.delay(Math.random() * 1000)];
-
-            case 1:
-              _a.sent();
-
-              return [2
-              /*return*/
-              , this.transition('CREATE_SEARCH_JOB')];
-          }
-        });
-      });
-    });
-  };
-
-  SumologicQuerier.prototype.transition = function (state) {
-    this.state = state;
-    this.retryCount = 0;
-
-    if (!this.useObservable) {
-      return this.loop();
-    } else {
-      return this.loopForObservable();
-    }
-  };
-
-  SumologicQuerier.prototype.retry = function () {
-    return __awaiter(this, void 0, void 0, function () {
-      return __generator(this, function (_a) {
-        switch (_a.label) {
-          case 0:
-            this.retryCount += 1;
+            _a = this;
             return [4
             /*yield*/
-            , this.delay(this.calculateRetryWait(1000, this.retryCount))];
-
-          case 1:
-            _a.sent();
-
-            if (!!this.useObservable) return [3
-            /*break*/
-            , 3];
-            return [4
-            /*yield*/
-            , this.loop()];
+            , this.doRequest('POST', '/v1/search/jobs', this.params)];
 
           case 2:
-            return [2
-            /*return*/
-            , _a.sent()];
-
-          case 3:
-            return [4
-            /*yield*/
-            , this.loopForObservable()];
-
-          case 4:
-            return [2
-            /*return*/
-            , _a.sent()];
-        }
-      });
-    });
-  };
-
-  SumologicQuerier.prototype.loop = function () {
-    return __awaiter(this, void 0, void 0, function () {
-      var now, _a, _b, _c, message, err_1, format, limit, response;
-
-      return __generator(this, function (_d) {
-        switch (_d.label) {
-          case 0:
+            _a.job = _c.sent();
             if (!this.job) return [3
             /*break*/
-            , 2];
+            , 4];
             now = new Date();
-            if (!(now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000)) return [3
+            if (!(now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000)) return [3
             /*break*/
-            , 2];
+            , 4];
             console.error('timeout');
             return [4
             /*yield*/
             , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
 
-          case 1:
-            _d.sent();
+          case 3:
+            _c.sent();
 
             return [2
             /*return*/
@@ -14555,67 +14472,41 @@ function () {
               message: 'timeout'
             })];
 
-          case 2:
-            _a = this.state;
+          case 4:
+            i = 0;
+            _c.label = 5;
 
-            switch (_a) {
-              case 'CREATE_SEARCH_JOB':
-                return [3
-                /*break*/
-                , 3];
+          case 5:
+            if (!(i < 6)) return [3
+            /*break*/
+            , 12];
+            _c.label = 6;
 
-              case 'REQUEST_STATUS':
-                return [3
-                /*break*/
-                , 5];
+          case 6:
+            _c.trys.push([6, 10,, 11]);
 
-              case 'REQUEST_RESULTS':
-                return [3
-                /*break*/
-                , 9];
-            }
+            _b = this;
+            return [4
+            /*yield*/
+            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
+
+          case 7:
+            _b.status = _c.sent();
+            if (!(this.status.data.state !== 'DONE GATHERING RESULTS')) return [3
+            /*break*/
+            , 9];
+            return [4
+            /*yield*/
+            , this.delay(this.calculateRetryWait(1000, i))];
+
+          case 8:
+            _c.sent();
 
             return [3
             /*break*/
             , 11];
 
-          case 3:
-            _b = this;
-            return [4
-            /*yield*/
-            , this.doRequest('POST', '/v1/search/jobs', this.params)];
-
-          case 4:
-            _b.job = _d.sent();
-            return [2
-            /*return*/
-            , this.transition('REQUEST_STATUS')];
-
-          case 5:
-            _d.trys.push([5, 7,, 8]);
-
-            _c = this;
-            return [4
-            /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
-
-          case 6:
-            _c.status = _d.sent();
-
-            if (this.status.data.state !== 'DONE GATHERING RESULTS') {
-              if (this.retryCount < 20) {
-                return [2
-                /*return*/
-                , this.retry()];
-              } else {
-                return [2
-                /*return*/
-                , Promise.reject({
-                  message: 'max retries exceeded'
-                })];
-              }
-            }
-
+          case 9:
             if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
               message = '';
 
@@ -14634,12 +14525,12 @@ function () {
               })];
             }
 
-            return [2
-            /*return*/
-            , this.transition('REQUEST_RESULTS')];
+            return [3
+            /*break*/
+            , 12];
 
-          case 7:
-            err_1 = _d.sent();
+          case 10:
+            err_1 = _c.sent();
 
             if (err_1.data && err_1.data.code && err_1.data.code === 'unauthorized') {
               return [2
@@ -14648,10 +14539,10 @@ function () {
             } // need to wait until job is created and registered
 
 
-            if (this.retryCount < 6 && err_1.data && err_1.data.code && err_1.data.code === 'searchjob.jobid.invalid') {
-              return [2
-              /*return*/
-              , this.retry()];
+            if (err_1.data && err_1.data.code && err_1.data.code === 'searchjob.jobid.invalid') {
+              return [3
+              /*break*/
+              , 11];
             } else {
               return [2
               /*return*/
@@ -14660,14 +14551,28 @@ function () {
 
             return [3
             /*break*/
-            , 8];
-
-          case 8:
-            return [3
-            /*break*/
             , 11];
 
-          case 9:
+          case 11:
+            i++;
+            return [3
+            /*break*/
+            , 5];
+
+          case 12:
+            if (i === 6) {
+              throw {
+                message: 'max retries exceeded'
+              };
+            }
+
+            i = 0;
+            _c.label = 13;
+
+          case 13:
+            if (!(i < 6)) return [3
+            /*break*/
+            , 16];
             format = this.format.slice(0, -1);
 
             if (this.format === 'time_series_records') {
@@ -14693,253 +14598,268 @@ function () {
             /*yield*/
             , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=0&limit=") + limit)];
 
-          case 10:
-            response = _d.sent();
+          case 14:
+            response = _c.sent();
             return [2
             /*return*/
             , response.data];
 
-          case 11:
+          case 15:
+            i++;
+            return [3
+            /*break*/
+            , 13];
+
+          case 16:
+            if (i === 6) {
+              throw {
+                message: 'max retries exceeded'
+              };
+            }
+
             return [2
             /*return*/
-            , Promise.reject({
-              message: 'unexpected status'
-            })];
+            ];
         }
       });
     });
   };
 
-  SumologicQuerier.prototype.loopForObservable = function () {
-    return __awaiter(this, void 0, void 0, function () {
-      var now, _a, _b, _c, prevMessageCount, prevRecordCount, err_2, format, limit, response, err_3;
+  SumologicQuerier.prototype.getResultObservable = function () {
+    var _this = this;
 
-      var _this = this;
+    var startTime = new Date();
+    return new _rxjs.Observable(function (observer) {
+      (function () {
+        return __awaiter(_this, void 0, void 0, function () {
+          var _a, now, i, _b, prevMessageCount, prevRecordCount, err_2, format, limit, response, err_3;
 
-      return __generator(this, function (_d) {
-        switch (_d.label) {
-          case 0:
-            if (!this.job) return [3
-            /*break*/
-            , 2];
-            now = new Date();
-            if (!(now.valueOf() - this.startTime.valueOf() > this.timeoutSec * 1000)) return [3
-            /*break*/
-            , 2];
-            console.error('timeout');
-            return [4
-            /*yield*/
-            , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
+          return __generator(this, function (_c) {
+            switch (_c.label) {
+              case 0:
+                return [4
+                /*yield*/
+                , this.delay(Math.random() * 1000)];
 
-          case 1:
-            _d.sent();
+              case 1:
+                _c.sent();
 
-            return [2
-            /*return*/
-            , _rxjs.Observable.throw({
-              message: 'timeout'
-            })];
+                _a = this;
+                return [4
+                /*yield*/
+                , this.doRequest('POST', '/v1/search/jobs', this.params)];
 
-          case 2:
-            _a = this.state;
+              case 2:
+                _a.job = _c.sent();
+                _c.label = 3;
 
-            switch (_a) {
-              case 'CREATE_SEARCH_JOB':
+              case 3:
+                if (false) {}
+                if (!this.job) return [3
+                /*break*/
+                , 5];
+                now = new Date();
+                if (!(now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000)) return [3
+                /*break*/
+                , 5];
+                console.error('timeout');
+                return [4
+                /*yield*/
+                , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
+
+              case 4:
+                _c.sent();
+
+                throw {
+                  message: 'timeout'
+                };
+
+              case 5:
+                i = void 0;
+                i = 0;
+                _c.label = 6;
+
+              case 6:
+                if (!(i < 6)) return [3
+                /*break*/
+                , 12];
+                _c.label = 7;
+
+              case 7:
+                _c.trys.push([7, 10,, 11]);
+
+                _b = this;
+                return [4
+                /*yield*/
+                , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
+
+              case 8:
+                _b.status = _c.sent();
+                prevMessageCount = this.messageCount;
+                prevRecordCount = this.recordCount;
+                this.messageCount = this.status.data.messageCount;
+                this.recordCount = this.status.data.recordCount;
+
+                if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+                  throw {
+                    message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n')
+                  };
+                }
+
+                if (this.status.data.state === 'DONE GATHERING RESULTS') {
+                  return [3
+                  /*break*/
+                  , 12];
+                }
+
+                if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
+                  return [3
+                  /*break*/
+                  , 12];
+                }
+
+                if (this.format === 'messages' && this.messageCount > prevMessageCount) {
+                  return [3
+                  /*break*/
+                  , 12];
+                } // wait for new result arrival
+
+
+                return [4
+                /*yield*/
+                , this.delay(this.calculateRetryWait(1000, i))];
+
+              case 9:
+                // wait for new result arrival
+                _c.sent();
+
+                return [3
+                /*break*/
+                , 11];
+
+              case 10:
+                err_2 = _c.sent(); // need to wait until job is created and registered
+
+                if (err_2.data && err_2.data.code && err_2.data.code === 'searchjob.jobid.invalid') {
+                  return [3
+                  /*break*/
+                  , 11];
+                } else {
+                  throw err_2;
+                }
+
+                return [3
+                /*break*/
+                , 11];
+
+              case 11:
+                i++;
+                return [3
+                /*break*/
+                , 6];
+
+              case 12:
+                if (i === 6) {
+                  throw {
+                    message: 'max retries exceeded'
+                  };
+                }
+
+                i = 0;
+                _c.label = 13;
+
+              case 13:
+                if (!(i < 6)) return [3
+                /*break*/
+                , 19];
+                format = this.format.slice(0, -1);
+
+                if (this.format === 'time_series_records') {
+                  format = 'record';
+                }
+
+                if (!['record', 'message'].includes(format)) {
+                  throw {
+                    message: 'unsupported type'
+                  };
+                }
+
+                limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
+
+                if (limit === 0) {
+                  return [2
+                  /*return*/
+                  , _rxjs.Observable.empty()];
+                }
+
+                _c.label = 14;
+
+              case 14:
+                _c.trys.push([14, 16,, 17]);
+
+                return [4
+                /*yield*/
+                , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=") + this.offset + '&limit=' + limit)];
+
+              case 15:
+                response = _c.sent();
+                this.offset += response.data[format + "s"].length;
+
+                if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                  return [2
+                  /*return*/
+                  , observer.next(response.data)];
+                }
+
+                observer.next(response.data);
+                return [3
+                /*break*/
+                , 19];
+
+              case 16:
+                err_3 = _c.sent();
+
+                if (err_3.data && err_3.data.code && err_3.data.code === 'searchjob.jobid.invalid') {
+                  return [3
+                  /*break*/
+                  , 18];
+                } else {
+                  throw err_3;
+                }
+
+                return [3
+                /*break*/
+                , 17];
+
+              case 17:
+                ;
+                _c.label = 18;
+
+              case 18:
+                i++;
+                return [3
+                /*break*/
+                , 13];
+
+              case 19:
+                if (i === 6) {
+                  throw {
+                    message: 'max retries exceeded'
+                  };
+                }
+
                 return [3
                 /*break*/
                 , 3];
 
-              case 'REQUEST_STATUS':
-                return [3
-                /*break*/
-                , 5];
-
-              case 'REQUEST_RESULTS':
-                return [3
-                /*break*/
-                , 10];
+              case 20:
+                return [2
+                /*return*/
+                ];
             }
-
-            return [3
-            /*break*/
-            , 15];
-
-          case 3:
-            _b = this;
-            return [4
-            /*yield*/
-            , this.doRequest('POST', '/v1/search/jobs', this.params)];
-
-          case 4:
-            _b.job = _d.sent();
-            return [2
-            /*return*/
-            , this.transition('REQUEST_STATUS')];
-
-          case 5:
-            _d.trys.push([5, 8,, 9]);
-
-            _c = this;
-            return [4
-            /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
-
-          case 6:
-            _c.status = _d.sent();
-            prevMessageCount = this.messageCount;
-            prevRecordCount = this.recordCount;
-            this.messageCount = this.status.data.messageCount;
-            this.recordCount = this.status.data.recordCount;
-
-            if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
-              return [2
-              /*return*/
-              , _rxjs.Observable.throw({
-                message: this.status.data.pendingErrors.concat(this.status.data.pendingWarnings).join('\n')
-              })];
-            }
-
-            if (this.status.data.state === 'DONE GATHERING RESULTS') {
-              return [2
-              /*return*/
-              , this.transition('REQUEST_RESULTS')];
-            }
-
-            if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
-              return [2
-              /*return*/
-              , this.transition('REQUEST_RESULTS')];
-            }
-
-            if (this.format === 'messages' && this.messageCount > prevMessageCount) {
-              return [2
-              /*return*/
-              , this.transition('REQUEST_RESULTS')];
-            } // wait for new result arrival
-
-
-            return [4
-            /*yield*/
-            , this.delay(200)];
-
-          case 7:
-            // wait for new result arrival
-            _d.sent();
-
-            return [2
-            /*return*/
-            , this.transition('REQUEST_STATUS')];
-
-          case 8:
-            err_2 = _d.sent();
-
-            if (err_2.data && err_2.data.code && err_2.data.code === 'unauthorized') {
-              return [2
-              /*return*/
-              , _rxjs.Observable.throw(err_2)];
-            } // need to wait until job is created and registered
-
-
-            if (this.retryCount < 6 && err_2.data && err_2.data.code && err_2.data.code === 'searchjob.jobid.invalid') {
-              return [2
-              /*return*/
-              , this.retry()];
-            } else {
-              return [2
-              /*return*/
-              , _rxjs.Observable.throw(err_2)];
-            }
-
-            return [3
-            /*break*/
-            , 9];
-
-          case 9:
-            return [3
-            /*break*/
-            , 15];
-
-          case 10:
-            format = this.format.slice(0, -1);
-
-            if (this.format === 'time_series_records') {
-              format = 'record';
-            }
-
-            if (!['record', 'message'].includes(format)) {
-              return [2
-              /*return*/
-              , _rxjs.Observable.throw({
-                message: 'unsupported type'
-              })];
-            }
-
-            limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
-
-            if (limit === 0) {
-              return [2
-              /*return*/
-              , _rxjs.Observable.empty()];
-            }
-
-            _d.label = 11;
-
-          case 11:
-            _d.trys.push([11, 13,, 14]);
-
-            return [4
-            /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=") + this.offset + '&limit=' + limit)];
-
-          case 12:
-            response = _d.sent();
-            this.offset += response.data[format + "s"].length;
-
-            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
-              return [2
-              /*return*/
-              , _rxjs.Observable.from([response.data])];
-            }
-
-            return [2
-            /*return*/
-            , _rxjs.Observable.from([response.data]).concat(_rxjs.Observable.defer(function () {
-              return _this.transition('REQUEST_STATUS');
-            }).mergeMap(function (value) {
-              return value;
-            }))];
-
-          case 13:
-            err_3 = _d.sent();
-
-            if (this.retryCount < 6 && err_3.data && err_3.data.code && err_3.data.code === 'searchjob.jobid.invalid') {
-              return [2
-              /*return*/
-              , this.retry()];
-            } else {
-              return [2
-              /*return*/
-              , _rxjs.Observable.throw(err_3)];
-            }
-
-            return [3
-            /*break*/
-            , 14];
-
-          case 14:
-            ;
-            return [3
-            /*break*/
-            , 15];
-
-          case 15:
-            return [2
-            /*return*/
-            , _rxjs.Observable.throw({
-              message: 'unexpected status'
-            })];
-        }
-      });
+          });
+        });
+      })();
     });
   };
 

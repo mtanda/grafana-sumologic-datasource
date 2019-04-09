@@ -32,7 +32,7 @@ export class SumologicDatasource {
     this.url = instanceSettings.url;
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
-    this.timeoutSec = instanceSettings.jsonData.timeout || 30;
+    this.timeoutSec = instanceSettings.jsonData.timeout || 180;
     this.$q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
@@ -93,7 +93,6 @@ export class SumologicDatasource {
           }
         }
         return this.logQueryObservable(params, target.format)
-          .mergeMap(value => value)
           .scan((acc: any, one) => {
             acc.fields = one.fields;
             if (one.records) {
