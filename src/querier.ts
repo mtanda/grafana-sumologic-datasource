@@ -64,13 +64,13 @@ export class SumologicQuerier {
                 if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                     continue;
                 } else {
-                    await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                    this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                     return Promise.reject(err);
                 }
             }
         }
         if (i === 6) {
-            await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { message: 'max retries exceeded' };
         }
 
@@ -94,15 +94,20 @@ export class SumologicQuerier {
             } else {
                 result = response;
             }
-            if (Math.min(this.maximumOffset, this.status.data[`${format}Count`]) <= this.offset) {
+            if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
                 break;
             }
         }
         if (i === 6) {
-            await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { message: 'max retries exceeded' };
         }
 
+        try {
+            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+        } catch (e) {
+            // ignore error
+        }
         return result.data;
     }
 
@@ -110,6 +115,14 @@ export class SumologicQuerier {
         const startTime = new Date();
         return new Observable((observer) => {
             (async () => {
+                let format = this.format.slice(0, -1); // strip last 's'
+                if (this.format === 'time_series_records') {
+                    format = 'record';
+                }
+                if (!['record', 'message'].includes(format)) {
+                    throw { message: 'unsupported type' };
+                }
+
                 await this.delay(Math.random() * 1000);
                 let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
 
@@ -117,7 +130,7 @@ export class SumologicQuerier {
                     let now = new Date();
                     if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
                         console.error('timeout');
-                        await this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                        this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                         throw { message: 'timeout' };
                     }
 
@@ -153,23 +166,17 @@ export class SumologicQuerier {
                             if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                                 continue;
                             } else {
+                                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                                 throw err;
                             }
                         }
                     }
                     if (i === 6) {
+                        this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                         throw { message: 'max retries exceeded' };
                     }
 
                     for (i = 0; i < 6; i++) {
-                        let format = this.format.slice(0, -1); // strip last 's'
-                        if (this.format === 'time_series_records') {
-                            format = 'record';
-                        }
-                        if (!['record', 'message'].includes(format)) {
-                            throw { message: 'unsupported type' };
-                        }
-
                         let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
                         if (limit === 0) {
                             return Observable.empty();
@@ -177,7 +184,12 @@ export class SumologicQuerier {
                         try {
                             let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
                             this.offset += response.data[`${format}s`].length;
-                            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                            if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
+                                try {
+                                    this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                                } catch (e) {
+                                    // ignore error
+                                }
                                 return observer.next(response.data);
                             }
                             observer.next(response.data)
@@ -186,11 +198,13 @@ export class SumologicQuerier {
                             if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                                 continue;
                             } else {
+                                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                                 throw err;
                             }
                         };
                     }
                     if (i === 6) {
+                        this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                         throw { message: 'max retries exceeded' };
                     }
                 }
