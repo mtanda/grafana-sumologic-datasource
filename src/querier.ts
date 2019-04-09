@@ -74,7 +74,7 @@ export class SumologicQuerier {
             throw { message: 'max retries exceeded' };
         }
 
-        let result: any;
+        let result: any = {};
         for (i = 0; i < 6; i++) {
             if (this.status.data[`${format}Count`] === 0) {
                 break;
