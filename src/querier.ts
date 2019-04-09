@@ -10,7 +10,6 @@ export class SumologicQuerier {
     params: any;
     format: string;
     timeoutSec: number;
-    useObservable: boolean;
     datasource: any;
     backendSrv: any;
     retryCount: number;
@@ -22,11 +21,10 @@ export class SumologicQuerier {
     messageCount: number;
     recordCount: number;
 
-    constructor(params, format, timeoutSec, useObservable, datasource, backendSrv) {
+    constructor(params, format, timeoutSec, datasource, backendSrv) {
         this.params = params;
         this.format = format;
         this.timeoutSec = timeoutSec;
-        this.useObservable = useObservable;
         this.datasource = datasource;
         this.backendSrv = backendSrv;
         this.retryCount = 0;

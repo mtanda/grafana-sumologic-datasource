@@ -243,12 +243,12 @@ export class SumologicDatasource {
   }
 
   async logQuery(params, format) {
-    let querier = new SumologicQuerier(params, format, this.timeoutSec, false, this, this.backendSrv);
+    let querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
     return await querier.getResult();
   }
 
   logQueryObservable(params, format) {
-    let querier = new SumologicQuerier(params, format, this.timeoutSec, true, this, this.backendSrv);
+    let querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
     return querier.getResultObservable();
   }
 
