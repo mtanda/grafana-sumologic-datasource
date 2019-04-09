@@ -72,13 +72,29 @@ export class SumologicQuerier {
             throw { message: 'max retries exceeded' };
         }
 
+        let result: any;
         for (i = 0; i < 6; i++) {
             if (this.status.data[`${format}Count`] === 0) {
                 return Promise.resolve([]);
             }
-            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
-            let response = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id + `/${format}s?offset=0&limit=` + limit);
-            return response.data;
+            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+            if (limit === 0) {
+                return Promise.resolve([]);
+            }
+            let response = await this.doRequest('GET', '/v1/search/jobs/' + job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
+            this.offset += response.data[`${format}s`].length;
+            if (result.data) {
+                if (result.data.records) {
+                    result.data.records = (result.data.records || []).concat(response.data.records);
+                } else if (result.data.messages) {
+                    result.data.messages = (result.data.messages || []).concat(response.data.messages);
+                }
+            } else {
+                result = response;
+            }
+            if (Math.min(this.maximumOffset, this.status.data[`${format}Count`]) <= this.offset) {
+                return result.data;
+            }
         }
         if (i === 6) {
             throw { message: 'max retries exceeded' };
