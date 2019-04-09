@@ -1,56 +1,47 @@
 import _ from 'lodash';
 import { Observable } from 'rxjs';
 import 'rxjs/add/observable/empty';
-import 'rxjs/add/observable/from';
-import 'rxjs/add/observable/defer';
-import 'rxjs/add/operator/concat';
-import 'rxjs/add/operator/mergeMap';
 
 export class SumologicQuerier {
     params: any;
     format: string;
     timeoutSec: number;
-    useObservable: boolean;
     datasource: any;
     backendSrv: any;
-    retryCount: number;
     offset: number;
     maximumOffset: number;
-    state: string;
-    job: any;
-    status: any;
     messageCount: number;
     recordCount: number;
+    status: any;
 
-    constructor(params, format, timeoutSec, useObservable, datasource, backendSrv) {
+    constructor(params, format, timeoutSec, datasource, backendSrv) {
         this.params = params;
         this.format = format;
         this.timeoutSec = timeoutSec;
-        this.useObservable = useObservable;
         this.datasource = datasource;
         this.backendSrv = backendSrv;
-        this.retryCount = 0;
         this.offset = 0;
         this.maximumOffset = 10000;
+        this.messageCount = 0;
+        this.recordCount = 0;
     }
 
     async getResult() {
-        const startTime = new Date();
-        await this.delay(Math.random() * 1000);
-        this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
-        if (this.job) {
-            let now = new Date();
-            if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
-                console.error('timeout');
-                await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
-                return Promise.reject({ message: 'timeout' });
-            }
+        let format = this.format.slice(0, -1); // strip last 's'
+        if (this.format === 'time_series_records') {
+            format = 'record';
         }
+        if (!['record', 'message'].includes(format)) {
+            return Promise.reject({ message: 'unsupported type' });
+        }
+
+        await this.delay(Math.random() * 1000);
+        let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
 
         let i;
         for (i = 0; i < 6; i++) {
             try {
-                this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
+                this.status = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}`);
                 if (this.status.data.state !== 'DONE GATHERING RESULTS') {
                     await this.delay(this.calculateRetryWait(1000, i));
                     continue;
@@ -64,67 +55,89 @@ export class SumologicQuerier {
                     if (!_.isEmpty(this.status.data.pendingWarnings)) {
                         message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
                     }
-                    return Promise.reject({ message: message });
+                    throw { message: message };
                 }
+
                 break;
             } catch (err) {
-                if (err.data && err.data.code && err.data.code === 'unauthorized') {
-                    return Promise.reject(err);
-                }
                 // need to wait until job is created and registered
                 if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                     continue;
                 } else {
+                    this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                     return Promise.reject(err);
                 }
             }
         }
         if (i === 6) {
+            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { message: 'max retries exceeded' };
         }
 
+        let result: any = {};
         for (i = 0; i < 6; i++) {
-            let format = this.format.slice(0, -1); // strip last 's'
-            if (this.format === 'time_series_records') {
-                format = 'record';
-            }
-            if (!['record', 'message'].includes(format)) {
-                return Promise.reject({ message: 'unsupported type' });
-            }
-
             if (this.status.data[`${format}Count`] === 0) {
-                return Promise.resolve([]);
+                break;
             }
-            let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]);
-            let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=0&limit=` + limit);
-            return response.data;
+            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+            if (limit === 0) {
+                break;
+            }
+            let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
+            this.offset += response.data[`${format}s`].length;
+            if (result.data) {
+                if (result.data.records) {
+                    result.data.records = (result.data.records || []).concat(response.data.records);
+                } else if (result.data.messages) {
+                    result.data.messages = (result.data.messages || []).concat(response.data.messages);
+                }
+            } else {
+                result = response;
+            }
+            if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
+                break;
+            }
         }
         if (i === 6) {
+            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { message: 'max retries exceeded' };
         }
+
+        try {
+            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+        } catch (e) {
+            // ignore error
+        }
+        return result.data;
     }
 
     getResultObservable() {
         const startTime = new Date();
         return new Observable((observer) => {
             (async () => {
+                let format = this.format.slice(0, -1); // strip last 's'
+                if (this.format === 'time_series_records') {
+                    format = 'record';
+                }
+                if (!['record', 'message'].includes(format)) {
+                    throw { message: 'unsupported type' };
+                }
+
                 await this.delay(Math.random() * 1000);
-                this.job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+                let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
 
                 while (true) {
-                    if (this.job) {
-                        let now = new Date();
-                        if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
-                            console.error('timeout');
-                            await this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id);
-                            throw { message: 'timeout' };
-                        }
+                    let now = new Date();
+                    if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
+                        console.error('timeout');
+                        this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                        throw { message: 'timeout' };
                     }
 
                     let i;
                     for (i = 0; i < 6; i++) {
                         try {
-                            this.status = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id);
+                            this.status = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}`);
                             let prevMessageCount = this.messageCount;
                             let prevRecordCount = this.recordCount;
                             this.messageCount = this.status.data.messageCount;
@@ -153,31 +166,30 @@ export class SumologicQuerier {
                             if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                                 continue;
                             } else {
+                                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                                 throw err;
                             }
                         }
                     }
                     if (i === 6) {
+                        this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                         throw { message: 'max retries exceeded' };
                     }
 
                     for (i = 0; i < 6; i++) {
-                        let format = this.format.slice(0, -1); // strip last 's'
-                        if (this.format === 'time_series_records') {
-                            format = 'record';
-                        }
-                        if (!['record', 'message'].includes(format)) {
-                            throw { message: 'unsupported type' };
-                        }
-
                         let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
                         if (limit === 0) {
                             return Observable.empty();
                         }
                         try {
-                            let response = await this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + `/${format}s?offset=` + this.offset + '&limit=' + limit);
+                            let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
                             this.offset += response.data[`${format}s`].length;
-                            if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                            if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
+                                try {
+                                    this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                                } catch (e) {
+                                    // ignore error
+                                }
                                 return observer.next(response.data);
                             }
                             observer.next(response.data)
@@ -186,11 +198,13 @@ export class SumologicQuerier {
                             if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                                 continue;
                             } else {
+                                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                                 throw err;
                             }
                         };
                     }
                     if (i === 6) {
+                        this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
                         throw { message: 'max retries exceeded' };
                     }
                 }

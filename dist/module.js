@@ -102,22 +102,6 @@ rxjs_1.Observable.combineLatest = rxjs_1.combineLatest;
 
 /***/ }),
 
-/***/ "../node_modules/rxjs-compat/add/observable/defer.js":
-/*!***********************************************************!*\
-  !*** ../node_modules/rxjs-compat/add/observable/defer.js ***!
-  \***********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js");
-rxjs_1.Observable.defer = rxjs_1.defer;
-//# sourceMappingURL=defer.js.map
-
-/***/ }),
-
 /***/ "../node_modules/rxjs-compat/add/observable/empty.js":
 /*!***********************************************************!*\
   !*** ../node_modules/rxjs-compat/add/observable/empty.js ***!
@@ -131,39 +115,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js");
 rxjs_1.Observable.empty = rxjs_1.empty;
 //# sourceMappingURL=empty.js.map
-
-/***/ }),
-
-/***/ "../node_modules/rxjs-compat/add/observable/from.js":
-/*!**********************************************************!*\
-  !*** ../node_modules/rxjs-compat/add/observable/from.js ***!
-  \**********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js");
-rxjs_1.Observable.from = rxjs_1.from;
-//# sourceMappingURL=from.js.map
-
-/***/ }),
-
-/***/ "../node_modules/rxjs-compat/add/operator/concat.js":
-/*!**********************************************************!*\
-  !*** ../node_modules/rxjs-compat/add/operator/concat.js ***!
-  \**********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js");
-var concat_1 = __webpack_require__(/*! ../../operator/concat */ "../node_modules/rxjs-compat/operator/concat.js");
-rxjs_1.Observable.prototype.concat = concat_1.concat;
-//# sourceMappingURL=concat.js.map
 
 /***/ }),
 
@@ -184,24 +135,6 @@ rxjs_1.Observable.prototype.map = map_1.map;
 
 /***/ }),
 
-/***/ "../node_modules/rxjs-compat/add/operator/mergeMap.js":
-/*!************************************************************!*\
-  !*** ../node_modules/rxjs-compat/add/operator/mergeMap.js ***!
-  \************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js");
-var mergeMap_1 = __webpack_require__(/*! ../../operator/mergeMap */ "../node_modules/rxjs-compat/operator/mergeMap.js");
-rxjs_1.Observable.prototype.mergeMap = mergeMap_1.mergeMap;
-rxjs_1.Observable.prototype.flatMap = mergeMap_1.mergeMap;
-//# sourceMappingURL=mergeMap.js.map
-
-/***/ }),
-
 /***/ "../node_modules/rxjs-compat/add/operator/scan.js":
 /*!********************************************************!*\
   !*** ../node_modules/rxjs-compat/add/operator/scan.js ***!
@@ -216,79 +149,6 @@ var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.j
 var scan_1 = __webpack_require__(/*! ../../operator/scan */ "../node_modules/rxjs-compat/operator/scan.js");
 rxjs_1.Observable.prototype.scan = scan_1.scan;
 //# sourceMappingURL=scan.js.map
-
-/***/ }),
-
-/***/ "../node_modules/rxjs-compat/operator/concat.js":
-/*!******************************************************!*\
-  !*** ../node_modules/rxjs-compat/operator/concat.js ***!
-  \******************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var rxjs_1 = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js");
-/* tslint:enable:max-line-length */
-/**
- * Creates an output Observable which sequentially emits all values from every
- * given input Observable after the current Observable.
- *
- * <span class="informal">Concatenates multiple Observables together by
- * sequentially emitting their values, one Observable after the other.</span>
- *
- * <img src="./img/concat.png" width="100%">
- *
- * Joins this Observable with multiple other Observables by subscribing to them
- * one at a time, starting with the source, and merging their results into the
- * output Observable. Will wait for each Observable to complete before moving
- * on to the next.
- *
- * @example <caption>Concatenate a timer counting from 0 to 3 with a synchronous sequence from 1 to 10</caption>
- * var timer = Rx.Observable.interval(1000).take(4);
- * var sequence = Rx.Observable.range(1, 10);
- * var result = timer.concat(sequence);
- * result.subscribe(x => console.log(x));
- *
- * // results in:
- * // 1000ms-> 0 -1000ms-> 1 -1000ms-> 2 -1000ms-> 3 -immediate-> 1 ... 10
- *
- * @example <caption>Concatenate 3 Observables</caption>
- * var timer1 = Rx.Observable.interval(1000).take(10);
- * var timer2 = Rx.Observable.interval(2000).take(6);
- * var timer3 = Rx.Observable.interval(500).take(10);
- * var result = timer1.concat(timer2, timer3);
- * result.subscribe(x => console.log(x));
- *
- * // results in the following:
- * // (Prints to console sequentially)
- * // -1000ms-> 0 -1000ms-> 1 -1000ms-> ... 9
- * // -2000ms-> 0 -2000ms-> 1 -2000ms-> ... 5
- * // -500ms-> 0 -500ms-> 1 -500ms-> ... 9
- *
- * @see {@link concatAll}
- * @see {@link concatMap}
- * @see {@link concatMapTo}
- *
- * @param {ObservableInput} other An input Observable to concatenate after the source
- * Observable. More than one input Observables may be given as argument.
- * @param {Scheduler} [scheduler=null] An optional IScheduler to schedule each
- * Observable subscription on.
- * @return {Observable} All values of each passed Observable merged into a
- * single Observable, in order, in serial fashion.
- * @method concat
- * @owner Observable
- */
-function concat() {
-    var observables = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        observables[_i] = arguments[_i];
-    }
-    return this.lift.call(rxjs_1.concat.apply(void 0, [this].concat(observables)));
-}
-exports.concat = concat;
-//# sourceMappingURL=concat.js.map
 
 /***/ }),
 
@@ -341,76 +201,6 @@ function map(project, thisArg) {
 }
 exports.map = map;
 //# sourceMappingURL=map.js.map
-
-/***/ }),
-
-/***/ "../node_modules/rxjs-compat/operator/mergeMap.js":
-/*!********************************************************!*\
-  !*** ../node_modules/rxjs-compat/operator/mergeMap.js ***!
-  \********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var operators_1 = __webpack_require__(/*! rxjs/operators */ "../node_modules/rxjs/_esm5/operators/index.js");
-/**
- * Projects each source value to an Observable which is merged in the output
- * Observable.
- *
- * <span class="informal">Maps each value to an Observable, then flattens all of
- * these inner Observables using {@link mergeAll}.</span>
- *
- * <img src="./img/mergeMap.png" width="100%">
- *
- * Returns an Observable that emits items based on applying a function that you
- * supply to each item emitted by the source Observable, where that function
- * returns an Observable, and then merging those resulting Observables and
- * emitting the results of this merger.
- *
- * @example <caption>Map and flatten each letter to an Observable ticking every 1 second</caption>
- * var letters = Rx.Observable.of('a', 'b', 'c');
- * var result = letters.mergeMap(x =>
- *   Rx.Observable.interval(1000).map(i => x+i)
- * );
- * result.subscribe(x => console.log(x));
- *
- * // Results in the following:
- * // a0
- * // b0
- * // c0
- * // a1
- * // b1
- * // c1
- * // continues to list a,b,c with respective ascending integers
- *
- * @see {@link concatMap}
- * @see {@link exhaustMap}
- * @see {@link merge}
- * @see {@link mergeAll}
- * @see {@link mergeMapTo}
- * @see {@link mergeScan}
- * @see {@link switchMap}
- *
- * @param {function(value: T, ?index: number): ObservableInput} project A function
- * that, when applied to an item emitted by the source Observable, returns an
- * Observable.
- * @param {number} [concurrent=Number.POSITIVE_INFINITY] Maximum number of input
- * Observables being subscribed to concurrently.
- * @return {Observable} An Observable that emits the result of applying the
- * projection function (and the optional `resultSelector`) to each item emitted
- * by the source Observable and merging the results of the Observables obtained
- * from this transformation.
- * @method mergeMap
- * @owner Observable
- */
-function mergeMap(project, concurrent) {
-    if (concurrent === void 0) { concurrent = Number.POSITIVE_INFINITY; }
-    return operators_1.mergeMap(project, concurrent)(this);
-}
-exports.mergeMap = mergeMap;
-//# sourceMappingURL=mergeMap.js.map
 
 /***/ }),
 
@@ -12921,21 +12711,6 @@ __webpack_require__(/*! rxjs-compat/add/observable/combineLatest */ "../node_mod
 
 /***/ }),
 
-/***/ "../node_modules/rxjs/add/observable/defer.js":
-/*!****************************************************!*\
-  !*** ../node_modules/rxjs/add/observable/defer.js ***!
-  \****************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-__webpack_require__(/*! rxjs-compat/add/observable/defer */ "../node_modules/rxjs-compat/add/observable/defer.js");
-//# sourceMappingURL=defer.js.map
-
-/***/ }),
-
 /***/ "../node_modules/rxjs/add/observable/empty.js":
 /*!****************************************************!*\
   !*** ../node_modules/rxjs/add/observable/empty.js ***!
@@ -12951,36 +12726,6 @@ __webpack_require__(/*! rxjs-compat/add/observable/empty */ "../node_modules/rxj
 
 /***/ }),
 
-/***/ "../node_modules/rxjs/add/observable/from.js":
-/*!***************************************************!*\
-  !*** ../node_modules/rxjs/add/observable/from.js ***!
-  \***************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-__webpack_require__(/*! rxjs-compat/add/observable/from */ "../node_modules/rxjs-compat/add/observable/from.js");
-//# sourceMappingURL=from.js.map
-
-/***/ }),
-
-/***/ "../node_modules/rxjs/add/operator/concat.js":
-/*!***************************************************!*\
-  !*** ../node_modules/rxjs/add/operator/concat.js ***!
-  \***************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-__webpack_require__(/*! rxjs-compat/add/operator/concat */ "../node_modules/rxjs-compat/add/operator/concat.js");
-//# sourceMappingURL=concat.js.map
-
-/***/ }),
-
 /***/ "../node_modules/rxjs/add/operator/map.js":
 /*!************************************************!*\
   !*** ../node_modules/rxjs/add/operator/map.js ***!
@@ -12993,21 +12738,6 @@ __webpack_require__(/*! rxjs-compat/add/operator/concat */ "../node_modules/rxjs
 Object.defineProperty(exports, "__esModule", { value: true });
 __webpack_require__(/*! rxjs-compat/add/operator/map */ "../node_modules/rxjs-compat/add/operator/map.js");
 //# sourceMappingURL=map.js.map
-
-/***/ }),
-
-/***/ "../node_modules/rxjs/add/operator/mergeMap.js":
-/*!*****************************************************!*\
-  !*** ../node_modules/rxjs/add/operator/mergeMap.js ***!
-  \*****************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-__webpack_require__(/*! rxjs-compat/add/operator/mergeMap */ "../node_modules/rxjs-compat/add/operator/mergeMap.js");
-//# sourceMappingURL=mergeMap.js.map
 
 /***/ }),
 
@@ -13338,8 +13068,6 @@ __webpack_require__(/*! rxjs/add/observable/combineLatest */ "../node_modules/rx
 __webpack_require__(/*! rxjs/add/operator/map */ "../node_modules/rxjs/add/operator/map.js");
 
 __webpack_require__(/*! rxjs/add/operator/scan */ "../node_modules/rxjs/add/operator/scan.js");
-
-__webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/operator/mergeMap.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -13798,7 +13526,7 @@ function () {
       return __generator(this, function (_a) {
         switch (_a.label) {
           case 0:
-            querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, false, this, this.backendSrv);
+            querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
             return [4
             /*yield*/
             , querier.getResult()];
@@ -13813,7 +13541,7 @@ function () {
   };
 
   SumologicDatasource.prototype.logQueryObservable = function (params, format) {
-    var querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, true, this, this.backendSrv);
+    var querier = new _querier.SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
     return querier.getResultObservable();
   };
 
@@ -14265,14 +13993,6 @@ var _rxjs = __webpack_require__(/*! rxjs */ "../node_modules/rxjs/_esm5/index.js
 
 __webpack_require__(/*! rxjs/add/observable/empty */ "../node_modules/rxjs/add/observable/empty.js");
 
-__webpack_require__(/*! rxjs/add/observable/from */ "../node_modules/rxjs/add/observable/from.js");
-
-__webpack_require__(/*! rxjs/add/observable/defer */ "../node_modules/rxjs/add/observable/defer.js");
-
-__webpack_require__(/*! rxjs/add/operator/concat */ "../node_modules/rxjs/add/operator/concat.js");
-
-__webpack_require__(/*! rxjs/add/operator/mergeMap */ "../node_modules/rxjs/add/operator/mergeMap.js");
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -14417,162 +14137,25 @@ var __generator = undefined && undefined.__generator || function (thisArg, body)
 var SumologicQuerier =
 /** @class */
 function () {
-  function SumologicQuerier(params, format, timeoutSec, useObservable, datasource, backendSrv) {
+  function SumologicQuerier(params, format, timeoutSec, datasource, backendSrv) {
     this.params = params;
     this.format = format;
     this.timeoutSec = timeoutSec;
-    this.useObservable = useObservable;
     this.datasource = datasource;
     this.backendSrv = backendSrv;
-    this.retryCount = 0;
     this.offset = 0;
     this.maximumOffset = 10000;
+    this.messageCount = 0;
+    this.recordCount = 0;
   }
 
   SumologicQuerier.prototype.getResult = function () {
     return __awaiter(this, void 0, void 0, function () {
-      var startTime, _a, now, i, _b, message, err_1, format, limit, response;
+      var format, job, i, _a, message, err_1, result, limit, response;
 
-      return __generator(this, function (_c) {
-        switch (_c.label) {
+      return __generator(this, function (_b) {
+        switch (_b.label) {
           case 0:
-            startTime = new Date();
-            return [4
-            /*yield*/
-            , this.delay(Math.random() * 1000)];
-
-          case 1:
-            _c.sent();
-
-            _a = this;
-            return [4
-            /*yield*/
-            , this.doRequest('POST', '/v1/search/jobs', this.params)];
-
-          case 2:
-            _a.job = _c.sent();
-            if (!this.job) return [3
-            /*break*/
-            , 4];
-            now = new Date();
-            if (!(now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000)) return [3
-            /*break*/
-            , 4];
-            console.error('timeout');
-            return [4
-            /*yield*/
-            , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
-
-          case 3:
-            _c.sent();
-
-            return [2
-            /*return*/
-            , Promise.reject({
-              message: 'timeout'
-            })];
-
-          case 4:
-            i = 0;
-            _c.label = 5;
-
-          case 5:
-            if (!(i < 6)) return [3
-            /*break*/
-            , 12];
-            _c.label = 6;
-
-          case 6:
-            _c.trys.push([6, 10,, 11]);
-
-            _b = this;
-            return [4
-            /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
-
-          case 7:
-            _b.status = _c.sent();
-            if (!(this.status.data.state !== 'DONE GATHERING RESULTS')) return [3
-            /*break*/
-            , 9];
-            return [4
-            /*yield*/
-            , this.delay(this.calculateRetryWait(1000, i))];
-
-          case 8:
-            _c.sent();
-
-            return [3
-            /*break*/
-            , 11];
-
-          case 9:
-            if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
-              message = '';
-
-              if (!_lodash2.default.isEmpty(this.status.data.pendingErrors)) {
-                message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
-              }
-
-              if (!_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
-                message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
-              }
-
-              return [2
-              /*return*/
-              , Promise.reject({
-                message: message
-              })];
-            }
-
-            return [3
-            /*break*/
-            , 12];
-
-          case 10:
-            err_1 = _c.sent();
-
-            if (err_1.data && err_1.data.code && err_1.data.code === 'unauthorized') {
-              return [2
-              /*return*/
-              , Promise.reject(err_1)];
-            } // need to wait until job is created and registered
-
-
-            if (err_1.data && err_1.data.code && err_1.data.code === 'searchjob.jobid.invalid') {
-              return [3
-              /*break*/
-              , 11];
-            } else {
-              return [2
-              /*return*/
-              , Promise.reject(err_1)];
-            }
-
-            return [3
-            /*break*/
-            , 11];
-
-          case 11:
-            i++;
-            return [3
-            /*break*/
-            , 5];
-
-          case 12:
-            if (i === 6) {
-              throw {
-                message: 'max retries exceeded'
-              };
-            }
-
-            i = 0;
-            _c.label = 13;
-
-          case 13:
-            if (!(i < 6)) return [3
-            /*break*/
-            , 16];
             format = this.format.slice(0, -1);
 
             if (this.format === 'time_series_records') {
@@ -14587,39 +14170,176 @@ function () {
               })];
             }
 
-            if (this.status.data[format + "Count"] === 0) {
-              return [2
-              /*return*/
-              , Promise.resolve([])];
-            }
-
-            limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]);
             return [4
             /*yield*/
-            , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=0&limit=") + limit)];
+            , this.delay(Math.random() * 1000)];
 
-          case 14:
-            response = _c.sent();
-            return [2
-            /*return*/
-            , response.data];
+          case 1:
+            _b.sent();
 
-          case 15:
+            return [4
+            /*yield*/
+            , this.doRequest('POST', '/v1/search/jobs', this.params)];
+
+          case 2:
+            job = _b.sent();
+            i = 0;
+            _b.label = 3;
+
+          case 3:
+            if (!(i < 6)) return [3
+            /*break*/
+            , 10];
+            _b.label = 4;
+
+          case 4:
+            _b.trys.push([4, 8,, 9]);
+
+            _a = this;
+            return [4
+            /*yield*/
+            , this.doRequest('GET', "/v1/search/jobs/" + job.data.id)];
+
+          case 5:
+            _a.status = _b.sent();
+            if (!(this.status.data.state !== 'DONE GATHERING RESULTS')) return [3
+            /*break*/
+            , 7];
+            return [4
+            /*yield*/
+            , this.delay(this.calculateRetryWait(1000, i))];
+
+          case 6:
+            _b.sent();
+
+            return [3
+            /*break*/
+            , 9];
+
+          case 7:
+            if (!_lodash2.default.isEmpty(this.status.data.pendingErrors) || !_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+              message = '';
+
+              if (!_lodash2.default.isEmpty(this.status.data.pendingErrors)) {
+                message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
+              }
+
+              if (!_lodash2.default.isEmpty(this.status.data.pendingWarnings)) {
+                message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
+              }
+
+              throw {
+                message: message
+              };
+            }
+
+            return [3
+            /*break*/
+            , 10];
+
+          case 8:
+            err_1 = _b.sent(); // need to wait until job is created and registered
+
+            if (err_1.data && err_1.data.code && err_1.data.code === 'searchjob.jobid.invalid') {
+              return [3
+              /*break*/
+              , 9];
+            } else {
+              this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+              return [2
+              /*return*/
+              , Promise.reject(err_1)];
+            }
+
+            return [3
+            /*break*/
+            , 9];
+
+          case 9:
             i++;
             return [3
             /*break*/
-            , 13];
+            , 3];
 
-          case 16:
+          case 10:
             if (i === 6) {
+              this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
               throw {
                 message: 'max retries exceeded'
               };
             }
 
+            result = {};
+            i = 0;
+            _b.label = 11;
+
+          case 11:
+            if (!(i < 6)) return [3
+            /*break*/
+            , 14];
+
+            if (this.status.data[format + "Count"] === 0) {
+              return [3
+              /*break*/
+              , 14];
+            }
+
+            limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
+
+            if (limit === 0) {
+              return [3
+              /*break*/
+              , 14];
+            }
+
+            return [4
+            /*yield*/
+            , this.doRequest('GET', "/v1/search/jobs/" + job.data.id + "/" + format + "s?offset=" + this.offset + "&limit=" + limit)];
+
+          case 12:
+            response = _b.sent();
+            this.offset += response.data[format + "s"].length;
+
+            if (result.data) {
+              if (result.data.records) {
+                result.data.records = (result.data.records || []).concat(response.data.records);
+              } else if (result.data.messages) {
+                result.data.messages = (result.data.messages || []).concat(response.data.messages);
+              }
+            } else {
+              result = response;
+            }
+
+            if (this.offset >= Math.min(this.maximumOffset, this.status.data[format + "Count"])) {
+              return [3
+              /*break*/
+              , 14];
+            }
+
+            _b.label = 13;
+
+          case 13:
+            i++;
+            return [3
+            /*break*/
+            , 11];
+
+          case 14:
+            if (i === 6) {
+              this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+              throw {
+                message: 'max retries exceeded'
+              };
+            }
+
+            try {
+              this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+            } catch (e) {// ignore error
+            }
+
             return [2
             /*return*/
-            ];
+            , result.data];
         }
       });
     });
@@ -14632,69 +14352,70 @@ function () {
     return new _rxjs.Observable(function (observer) {
       (function () {
         return __awaiter(_this, void 0, void 0, function () {
-          var _a, now, i, _b, prevMessageCount, prevRecordCount, err_2, format, limit, response, err_3;
+          var format, job, now, i, _a, prevMessageCount, prevRecordCount, err_2, limit, response, err_3;
 
-          return __generator(this, function (_c) {
-            switch (_c.label) {
+          return __generator(this, function (_b) {
+            switch (_b.label) {
               case 0:
+                format = this.format.slice(0, -1);
+
+                if (this.format === 'time_series_records') {
+                  format = 'record';
+                }
+
+                if (!['record', 'message'].includes(format)) {
+                  throw {
+                    message: 'unsupported type'
+                  };
+                }
+
                 return [4
                 /*yield*/
                 , this.delay(Math.random() * 1000)];
 
               case 1:
-                _c.sent();
+                _b.sent();
 
-                _a = this;
                 return [4
                 /*yield*/
                 , this.doRequest('POST', '/v1/search/jobs', this.params)];
 
               case 2:
-                _a.job = _c.sent();
-                _c.label = 3;
+                job = _b.sent();
+                _b.label = 3;
 
               case 3:
                 if (false) {}
-                if (!this.job) return [3
-                /*break*/
-                , 5];
                 now = new Date();
-                if (!(now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000)) return [3
-                /*break*/
-                , 5];
-                console.error('timeout');
-                return [4
-                /*yield*/
-                , this.doRequest('DELETE', '/v1/search/jobs/' + this.job.data.id)];
 
-              case 4:
-                _c.sent();
+                if (now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000) {
+                  console.error('timeout');
+                  this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+                  throw {
+                    message: 'timeout'
+                  };
+                }
 
-                throw {
-                  message: 'timeout'
-                };
-
-              case 5:
                 i = void 0;
                 i = 0;
-                _c.label = 6;
+                _b.label = 4;
 
-              case 6:
+              case 4:
                 if (!(i < 6)) return [3
                 /*break*/
-                , 12];
-                _c.label = 7;
+                , 10];
+                _b.label = 5;
 
-              case 7:
-                _c.trys.push([7, 10,, 11]);
+              case 5:
+                _b.trys.push([5, 8,, 9]);
 
-                _b = this;
+                _a = this;
                 return [4
                 /*yield*/
-                , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id)];
+                , this.doRequest('GET', "/v1/search/jobs/" + job.data.id)];
 
-              case 8:
-                _b.status = _c.sent();
+              case 6:
+                _a.status = _b.sent();
                 prevMessageCount = this.messageCount;
                 prevRecordCount = this.recordCount;
                 this.messageCount = this.status.data.messageCount;
@@ -14709,19 +14430,19 @@ function () {
                 if (this.status.data.state === 'DONE GATHERING RESULTS') {
                   return [3
                   /*break*/
-                  , 12];
+                  , 10];
                 }
 
                 if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
                   return [3
                   /*break*/
-                  , 12];
+                  , 10];
                 }
 
                 if (this.format === 'messages' && this.messageCount > prevMessageCount) {
                   return [3
                   /*break*/
-                  , 12];
+                  , 10];
                 } // wait for new result arrival
 
 
@@ -14729,61 +14450,51 @@ function () {
                 /*yield*/
                 , this.delay(this.calculateRetryWait(1000, i))];
 
-              case 9:
+              case 7:
                 // wait for new result arrival
-                _c.sent();
+                _b.sent();
 
                 return [3
                 /*break*/
-                , 11];
+                , 9];
 
-              case 10:
-                err_2 = _c.sent(); // need to wait until job is created and registered
+              case 8:
+                err_2 = _b.sent(); // need to wait until job is created and registered
 
                 if (err_2.data && err_2.data.code && err_2.data.code === 'searchjob.jobid.invalid') {
                   return [3
                   /*break*/
-                  , 11];
+                  , 9];
                 } else {
+                  this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw err_2;
                 }
 
                 return [3
                 /*break*/
-                , 11];
+                , 9];
 
-              case 11:
+              case 9:
                 i++;
                 return [3
                 /*break*/
-                , 6];
+                , 4];
 
-              case 12:
+              case 10:
                 if (i === 6) {
+                  this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
                     message: 'max retries exceeded'
                   };
                 }
 
                 i = 0;
-                _c.label = 13;
+                _b.label = 11;
 
-              case 13:
+              case 11:
                 if (!(i < 6)) return [3
                 /*break*/
-                , 19];
-                format = this.format.slice(0, -1);
-
-                if (this.format === 'time_series_records') {
-                  format = 'record';
-                }
-
-                if (!['record', 'message'].includes(format)) {
-                  throw {
-                    message: 'unsupported type'
-                  };
-                }
-
+                , 17];
                 limit = Math.min(this.maximumOffset, this.status.data[format + "Count"]) - this.offset;
 
                 if (limit === 0) {
@@ -14792,20 +14503,25 @@ function () {
                   , _rxjs.Observable.empty()];
                 }
 
-                _c.label = 14;
+                _b.label = 12;
 
-              case 14:
-                _c.trys.push([14, 16,, 17]);
+              case 12:
+                _b.trys.push([12, 14,, 15]);
 
                 return [4
                 /*yield*/
-                , this.doRequest('GET', '/v1/search/jobs/' + this.job.data.id + ("/" + format + "s?offset=") + this.offset + '&limit=' + limit)];
+                , this.doRequest('GET', "/v1/search/jobs/" + job.data.id + "/" + format + "s?offset=" + this.offset + "&limit=" + limit)];
 
-              case 15:
-                response = _c.sent();
+              case 13:
+                response = _b.sent();
                 this.offset += response.data[format + "s"].length;
 
-                if (this.status.data.state === 'DONE GATHERING RESULTS' || this.offset >= this.maximumOffset) {
+                if (this.offset >= Math.min(this.maximumOffset, this.status.data[format + "Count"])) {
+                  try {
+                    this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
+                  } catch (e) {// ignore error
+                  }
+
                   return [2
                   /*return*/
                   , observer.next(response.data)];
@@ -14814,35 +14530,37 @@ function () {
                 observer.next(response.data);
                 return [3
                 /*break*/
-                , 19];
+                , 17];
 
-              case 16:
-                err_3 = _c.sent();
+              case 14:
+                err_3 = _b.sent();
 
                 if (err_3.data && err_3.data.code && err_3.data.code === 'searchjob.jobid.invalid') {
                   return [3
                   /*break*/
-                  , 18];
+                  , 16];
                 } else {
+                  this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw err_3;
                 }
 
                 return [3
                 /*break*/
-                , 17];
+                , 15];
 
-              case 17:
+              case 15:
                 ;
-                _c.label = 18;
+                _b.label = 16;
 
-              case 18:
+              case 16:
                 i++;
                 return [3
                 /*break*/
-                , 13];
+                , 11];
 
-              case 19:
+              case 17:
                 if (i === 6) {
+                  this.doRequest('DELETE', "/v1/search/jobs/" + job.data.id);
                   throw {
                     message: 'max retries exceeded'
                   };
@@ -14852,7 +14570,7 @@ function () {
                 /*break*/
                 , 3];
 
-              case 20:
+              case 18:
                 return [2
                 /*return*/
                 ];
