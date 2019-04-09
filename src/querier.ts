@@ -39,7 +39,11 @@ export class SumologicQuerier {
         let i;
         let job;
         for (i = 0; i < 6; i++) {
-            job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+            try {
+                job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+            } catch (err) {
+                // ignore error
+            }
             if (job.data && job.data.id) {
                 break;
             }
@@ -88,26 +92,30 @@ export class SumologicQuerier {
 
         let result: any = {};
         for (i = 0; i < 6; i++) {
-            if (this.status.data[`${format}Count`] === 0) {
-                break;
-            }
-            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
-            if (limit === 0) {
-                break;
-            }
-            let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
-            this.offset += response.data[`${format}s`].length;
-            if (result.data) {
-                if (result.data.records) {
-                    result.data.records = (result.data.records || []).concat(response.data.records);
-                } else if (result.data.messages) {
-                    result.data.messages = (result.data.messages || []).concat(response.data.messages);
+            try {
+                if (this.status.data[`${format}Count`] === 0) {
+                    break;
                 }
-            } else {
-                result = response;
-            }
-            if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
-                break;
+                const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+                if (limit === 0) {
+                    break;
+                }
+                let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
+                this.offset += response.data[`${format}s`].length;
+                if (result.data) {
+                    if (result.data.records) {
+                        result.data.records = (result.data.records || []).concat(response.data.records);
+                    } else if (result.data.messages) {
+                        result.data.messages = (result.data.messages || []).concat(response.data.messages);
+                    }
+                } else {
+                    result = response;
+                }
+                if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
+                    break;
+                }
+            } catch (err) {
+                // ignore error
             }
         }
         if (i === 6) {
@@ -139,7 +147,11 @@ export class SumologicQuerier {
                 let i;
                 let job;
                 for (i = 0; i < 6; i++) {
-                    job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+                    try {
+                        job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+                    } catch (err) {
+                        // ignore error
+                    }
                     if (job.data && job.data.id) {
                         break;
                     }
