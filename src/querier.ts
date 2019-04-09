@@ -31,17 +31,8 @@ export class SumologicQuerier {
     }
 
     async getResult() {
-        const startTime = new Date();
         await this.delay(Math.random() * 1000);
         let job = await this.doRequest('POST', '/v1/search/jobs', this.params);
-        if (job) {
-            let now = new Date();
-            if (now.valueOf() - startTime.valueOf() > (this.timeoutSec * 1000)) {
-                console.error('timeout');
-                await this.doRequest('DELETE', '/v1/search/jobs/' + job.data.id);
-                return Promise.reject({ message: 'timeout' });
-            }
-        }
 
         let i;
         for (i = 0; i < 6; i++) {
