@@ -49,11 +49,9 @@ export class SumologicQuerier {
                     }
                     return Promise.reject({ message: message });
                 }
+
                 break;
             } catch (err) {
-                if (err.data && err.data.code && err.data.code === 'unauthorized') {
-                    return Promise.reject(err);
-                }
                 // need to wait until job is created and registered
                 if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                     continue;
