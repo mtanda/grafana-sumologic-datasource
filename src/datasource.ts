@@ -329,7 +329,7 @@ export class SumologicDatasource {
     valueFields.forEach((valueField) => {
       let result = {};
       records.forEach((r) => {
-        metricLabel = this.createMetricLabel(r.map, target);
+        metricLabel = this.createMetricLabel(_.extend(r.map, { field: valueField }), target);
         result[metricLabel] = result[metricLabel] || [];
         let timestamp = parseFloat(r.map[keyField] || defaultValue);
         let len = result[metricLabel].length;
@@ -340,8 +340,8 @@ export class SumologicDatasource {
         result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
       });
 
-      _.each(result, (v) => {
-        timeSeries.push({ target: valueField, datapoints: v });
+      _.each(result, (v, k) => {
+        timeSeries.push({ target: k, datapoints: v });
       });
     });
     return timeSeries;
