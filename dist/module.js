@@ -13632,7 +13632,9 @@ function () {
     valueFields.forEach(function (valueField) {
       var result = {};
       records.forEach(function (r) {
-        metricLabel = _this.createMetricLabel(r.map, target);
+        metricLabel = _this.createMetricLabel(_lodash2.default.extend(r.map, {
+          field: valueField
+        }), target);
         result[metricLabel] = result[metricLabel] || [];
         var timestamp = parseFloat(r.map[keyField] || defaultValue);
         var len = result[metricLabel].length;
@@ -13644,9 +13646,9 @@ function () {
         result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
       });
 
-      _lodash2.default.each(result, function (v) {
+      _lodash2.default.each(result, function (v, k) {
         timeSeries.push({
-          target: valueField,
+          target: k,
           datapoints: v
         });
       });
