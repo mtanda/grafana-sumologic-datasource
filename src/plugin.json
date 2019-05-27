@@ -9,6 +9,7 @@
 
   "metrics": true,
   "annotations": true,
+  "hiddenQueries": true,
 
   "info": {
     "description": "SumoLogic datasource",
