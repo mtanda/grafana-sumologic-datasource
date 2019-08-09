@@ -92,7 +92,7 @@ export class SumologicDatasource {
           }
         }
         return this.logQueryObservable(params, target.format)
-          .scan((acc: any, one) => {
+          .scan((acc: any, one: any) => {
             acc.fields = one.fields;
             if (one.records) {
               acc.records = (acc.records || []).concat(one.records);
