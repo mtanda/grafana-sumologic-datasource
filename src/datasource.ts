@@ -69,21 +69,21 @@ export class SumologicDatasource {
   }
 
   async query(options) {
-    let self = this;
-    let queries = _.chain(options.targets)
+    const self = this;
+    const queries = _.chain(options.targets)
       .filter(target => {
         return !target.hide && target.query;
       })
       .map((target: any) => {
-        let params = {
+        const params = {
           query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
           from: this.convertTime(options.range.from, false),
           to: this.convertTime(options.range.to, true),
           timeZone: 'Etc/UTC',
         };
-        let adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+        const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
         if (adhocFilters.length > 0) {
-          let filterQuery =
+          const filterQuery =
             ' | where ' +
             adhocFilters
               .map(f => {
@@ -155,7 +155,7 @@ export class SumologicDatasource {
         });
       }
 
-      let tableResponses = _.chain(responses)
+      const tableResponses = _.chain(responses)
         .filter((response, index) => {
           return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
         })
@@ -181,19 +181,19 @@ export class SumologicDatasource {
   }
 
   async metricFindQuery(query) {
-    let range = this.timeSrv.timeRange();
+    const range = this.timeSrv.timeRange();
 
-    let recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
+    const recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
     if (recordValuesQuery) {
-      let recordKey = recordValuesQuery[1].toLowerCase();
-      let query = recordValuesQuery[2];
-      let params = {
+      const recordKey = recordValuesQuery[1].toLowerCase();
+      const query = recordValuesQuery[2];
+      const params = {
         query: this.templateSrv.replace(this.stripComment(query)),
         from: String(this.convertTime(range.from, false)),
         to: String(this.convertTime(range.to, true)),
         timeZone: 'Etc/UTC',
       };
-      let result = await this.logQuery(params, 'records');
+      const result = await this.logQuery(params, 'records');
       if (_.isEmpty(result)) {
         return [];
       }
@@ -207,30 +207,30 @@ export class SumologicDatasource {
   }
 
   async annotationQuery(options) {
-    let annotation = options.annotation;
-    let query = annotation.query || '';
+    const annotation = options.annotation;
+    const query = annotation.query || '';
     let tagKeys = annotation.tagKeys || '';
     tagKeys = tagKeys.split(',');
-    let titleFormat = annotation.titleFormat || '';
-    let textFormat = annotation.textFormat || '';
+    const titleFormat = annotation.titleFormat || '';
+    const textFormat = annotation.textFormat || '';
 
     if (!query) {
       return Promise.resolve([]);
     }
 
-    let params = {
+    const params = {
       query: this.templateSrv.replace(this.stripComment(query)),
       from: String(this.convertTime(options.range.from, false)),
       to: String(this.convertTime(options.range.to, true)),
       timeZone: 'Etc/UTC',
     };
-    let result = await this.logQuery(params, 'messages');
+    const result = await this.logQuery(params, 'messages');
     if (_.isEmpty(result)) {
       return [];
     }
 
-    let eventList = result.messages.map(message => {
-      let tags = _.chain(message.map)
+    const eventList = result.messages.map(message => {
+      const tags = _.chain(message.map)
         .filter((v, k) => {
           return _.includes(tagKeys, k);
         })
@@ -249,7 +249,7 @@ export class SumologicDatasource {
   }
 
   async testDatasource() {
-    let params = {
+    const params = {
       query: '| count _sourceCategory',
       from: new Date().getTime() - 10 * 60 * 1000,
       to: new Date().getTime(),
@@ -264,25 +264,25 @@ export class SumologicDatasource {
   }
 
   async logQuery(params, format) {
-    let querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
+    const querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
     return await querier.getResult();
   }
 
   logQueryObservable(params, format) {
-    let querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
+    const querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
     return querier.getResultObservable();
   }
 
   transformDataToTable(data) {
-    let table = new TableModel();
+    const table = new TableModel();
 
     if (data.length === 0) {
       return table;
     }
 
-    let type = data[0].records ? 'records' : 'messages';
+    const type = data[0].records ? 'records' : 'messages';
 
-    let fields = _.chain(data)
+    const fields = _.chain(data)
       .map(d => {
         return _.map(d.fields, 'name');
       })
@@ -297,9 +297,9 @@ export class SumologicDatasource {
 
     // rows
     data.forEach(d => {
-      for (let r of d[type]) {
-        let row: any[] = [];
-        for (let key of fields) {
+      for (const r of d[type]) {
+        const row: any[] = [];
+        for (const key of fields) {
           row.push(r.map[key] || '');
         }
         table.rows.push(row);
@@ -311,8 +311,8 @@ export class SumologicDatasource {
 
   transformRecordsToTimeSeries(response, target, intervalMs, defaultValue) {
     let metricLabel = '';
-    let dps = [];
-    let fields = response.fields;
+    const dps = [];
+    const fields = response.fields;
     let records = response.records;
 
     if (records.length === 0) {
@@ -323,7 +323,7 @@ export class SumologicDatasource {
       return f.fieldType !== 'string' && f.keyField;
     });
     keyField = keyField ? keyField.name : '';
-    let valueFields = [] as string[];
+    const valueFields = [] as string[];
 
     fields.forEach(f => {
       if (f.fieldType !== 'string' && !f.keyField) {
@@ -331,7 +331,7 @@ export class SumologicDatasource {
       }
     });
 
-    let timeSeries = [] as {}[];
+    const timeSeries = [] as object[];
 
     if (valueFields.length === 0) {
       return { target: metricLabel, datapoints: dps };
@@ -351,12 +351,12 @@ export class SumologicDatasource {
     });
 
     valueFields.forEach(valueField => {
-      let result = {};
+      const result = {};
       records.forEach(r => {
         metricLabel = this.createMetricLabel(_.extend(r.map, { field: valueField }), target);
         result[metricLabel] = result[metricLabel] || [];
-        let timestamp = parseFloat(r.map[keyField] || defaultValue);
-        let len = result[metricLabel].length;
+        const timestamp = parseFloat(r.map[keyField] || defaultValue);
+        const len = result[metricLabel].length;
         if (len > 0 && timestamp - result[metricLabel][len - 1][1] > intervalMs) {
           result[metricLabel].push([null, result[metricLabel][len - 1][1] + intervalMs]);
         }
@@ -379,8 +379,8 @@ export class SumologicDatasource {
   }
 
   renderTemplate(aliasPattern, aliasData) {
-    var aliasRegex = /\{\{\s*(.+?)\s*\}\}/g;
-    return aliasPattern.replace(aliasRegex, function(match, g1) {
+    const aliasRegex = /\{\{\s*(.+?)\s*\}\}/g;
+    return aliasPattern.replace(aliasRegex, (match, g1) => {
       if (aliasData[g1]) {
         return aliasData[g1];
       }

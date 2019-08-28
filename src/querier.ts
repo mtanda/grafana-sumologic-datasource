@@ -107,7 +107,7 @@ export class SumologicQuerier {
         if (limit === 0) {
           break;
         }
-        let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
+        const response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
         this.offset += response.data[`${format}s`].length;
         if (result.data) {
           if (result.data.records) {
@@ -170,7 +170,7 @@ export class SumologicQuerier {
         }
 
         while (true) {
-          let now = new Date();
+          const now = new Date();
           if (now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000) {
             console.error('timeout');
             this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
@@ -181,8 +181,8 @@ export class SumologicQuerier {
           for (i = 0; i < 6; i++) {
             try {
               this.status = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}`);
-              let prevMessageCount = this.messageCount;
-              let prevRecordCount = this.recordCount;
+              const prevMessageCount = this.messageCount;
+              const prevRecordCount = this.recordCount;
               this.messageCount = this.status.data.messageCount;
               this.recordCount = this.status.data.recordCount;
 
@@ -235,12 +235,12 @@ export class SumologicQuerier {
           }
 
           for (i = 0; i < 6; i++) {
-            let limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
             if (limit === 0) {
               return Observable.empty();
             }
             try {
-              let response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
+              const response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
               this.offset += response.data[`${format}s`].length;
               if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
                 try {
@@ -278,7 +278,7 @@ export class SumologicQuerier {
       return this.doRequest(method, path, params);
     }
 
-    let options: any = {
+    const options: any = {
       method: method,
       url: this.datasource.url + path,
       data: params,
@@ -303,7 +303,7 @@ export class SumologicQuerier {
     }
 
     try {
-      let response = await this.backendSrv.datasourceRequest(options);
+      const response = await this.backendSrv.datasourceRequest(options);
       if (response.data.status && response.data.status === 404) {
         return Promise.reject(response);
       }

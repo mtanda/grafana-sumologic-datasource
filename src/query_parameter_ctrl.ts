@@ -18,7 +18,7 @@ angular.module('grafana.directives').directive('sumologicQueryParameter', () => 
 
 angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', $scope => {
   $scope.init = function() {
-    let target = $scope.target;
+    const target = $scope.target;
     target.query = target.query || '';
     target.aliasFormat = target.aliasFormat || '';
 
@@ -32,11 +32,11 @@ angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', 
     }
 
     if (!$scope.onChange) {
-      $scope.onChange = function() {};
+      $scope.onChange = () => {};
     }
   };
 
-  $scope.getDefaultFormat = function() {
+  $scope.getDefaultFormat = () => {
     if (this.panelType === 'table') {
       return 'records';
     }
