@@ -68,7 +68,7 @@ export class SumologicDatasource {
     }
   }
 
-  query(options) {
+  async query(options) {
     let self = this;
     let queries = _.chain(options.targets)
       .filter(target => {
