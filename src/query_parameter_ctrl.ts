@@ -7,17 +7,17 @@ angular.module('grafana.directives').directive('sumologicQueryParameter', () => 
     controller: 'SumologicQueryParameterCtrl',
     restrict: 'E',
     scope: {
-      target: "=",
-      datasource: "=",
-      panelType: "=",
-      isLastQuery: "=",
-      onChange: "&",
-    }
+      target: '=',
+      datasource: '=',
+      panelType: '=',
+      isLastQuery: '=',
+      onChange: '&',
+    },
   };
 });
 
-angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', ($scope) => {
-  $scope.init = function () {
+angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', $scope => {
+  $scope.init = function() {
     let target = $scope.target;
     target.query = target.query || '';
     target.aliasFormat = target.aliasFormat || '';
@@ -32,11 +32,11 @@ angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', 
     }
 
     if (!$scope.onChange) {
-      $scope.onChange = function () { };
+      $scope.onChange = function() {};
     }
   };
 
-  $scope.getDefaultFormat = function () {
+  $scope.getDefaultFormat = function() {
     if (this.panelType === 'table') {
       return 'records';
     }

@@ -4,10 +4,9 @@ import './mode-sumologic';
 import './snippets/sumologic';
 
 export class SumologicQueryCtrl extends QueryCtrl {
-    static templateUrl = 'partials/query.editor.html';
+  static templateUrl = 'partials/query.editor.html';
 
-    constructor($scope, $injector) {
-        super($scope, $injector);
-    }
+  constructor($scope, $injector) {
+    super($scope, $injector);
+  }
 }
-

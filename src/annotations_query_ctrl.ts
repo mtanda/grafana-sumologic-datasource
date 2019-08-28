@@ -6,4 +6,3 @@ export class SumologicAnnotationsQueryCtrl {
     this.scope = $scope;
   }
 }
-
