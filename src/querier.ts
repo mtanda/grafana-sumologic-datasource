@@ -14,6 +14,7 @@ export class SumologicQuerier {
   recordCount: number;
   status: any;
 
+  /** @ngInject */
   constructor(params, format, timeoutSec, datasource, backendSrv) {
     this.params = params;
     this.format = format;

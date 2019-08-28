@@ -24,6 +24,7 @@ export class SumologicDatasource {
   tokenTimer: any;
   excludeFieldList: any;
 
+  /** @ngInject */
   constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;

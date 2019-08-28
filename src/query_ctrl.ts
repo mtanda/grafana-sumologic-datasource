@@ -6,6 +6,7 @@ import './snippets/sumologic';
 export class SumologicQueryCtrl extends QueryCtrl {
   static templateUrl = 'partials/query.editor.html';
 
+  /** @ngInject */
   constructor($scope, $injector) {
     super($scope, $injector);
   }
