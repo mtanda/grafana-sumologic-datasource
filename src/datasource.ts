@@ -319,20 +319,20 @@ export class SumologicDatasource {
     }
 
     let keyField = fields.find(f => {
-      return f.fieldType != 'string' && f.keyField;
+      return f.fieldType !== 'string' && f.keyField;
     });
     keyField = keyField ? keyField.name : '';
     let valueFields = [] as string[];
 
     fields.forEach(f => {
-      if (f.fieldType != 'string' && !f.keyField) {
+      if (f.fieldType !== 'string' && !f.keyField) {
         valueFields.push(f.name);
       }
     });
 
     let timeSeries = [] as {}[];
 
-    if (valueFields.length == 0) {
+    if (valueFields.length === 0) {
       return { target: metricLabel, datapoints: dps };
     }
 
