@@ -1,0 +1,29 @@
+name: Node CI
+on: [release]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Node.js 10.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 10.x
+
+      - uses: actions/checkout@v1
+
+      - name: npm install, build #, and test
+        run: |
+          npm install
+          npm run build --if-present
+          #npm test
+
+      - name: Package
+        run: npx grafana-toolkit plugin:ci-package
+
+      - name: Publish
+        uses: Shopify/upload-to-release@master
+        with:
+          name: grafana-sumologic-datasource-${{github.event.release.tag_name}}.zip
+          path: ci/packages/mtanda-sumologic-datasource-${{github.event.release.tag_name}}.zip
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
