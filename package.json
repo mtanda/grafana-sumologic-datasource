@@ -12,7 +12,8 @@
   "dependencies": {
     "lodash": "^4.17.15",
     "moment": "^2.22.1",
-    "rxjs": "^6.4.0"
+    "rxjs": "^6.4.0",
+    "rxjs-compat": "^6.4.0"
   },
   "devDependencies": {
     "@grafana/data": "^6.3.2",
