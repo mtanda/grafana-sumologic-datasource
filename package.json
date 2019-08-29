@@ -12,8 +12,7 @@
   "dependencies": {
     "lodash": "^4.17.15",
     "moment": "^2.22.1",
-    "rxjs": "^6.2.1",
-    "rxjs-compat": "^6.2.1"
+    "rxjs": "^6.4.0"
   },
   "devDependencies": {
     "@grafana/data": "^6.3.2",
@@ -23,7 +22,6 @@
     "@types/grafana": "https://git@github.com/CorpGlory/types-grafana.git",
     "@types/jest": "^24.0.17",
     "@types/lodash": "^4.14.136",
-    "@types/react": "^16.2.0",
-    "@types/rx": "^4.1.1"
+    "@types/react": "^16.2.0"
   }
 }

@@ -1,6 +1,5 @@
 import _ from 'lodash';
-import { Observable } from 'rxjs';
-import 'rxjs/add/observable/empty';
+import { Observable, EMPTY } from 'rxjs';
 
 export class SumologicQuerier {
   params: any;
@@ -237,7 +236,7 @@ export class SumologicQuerier {
           for (i = 0; i < 6; i++) {
             const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
             if (limit === 0) {
-              return Observable.empty();
+              return EMPTY;
             }
             try {
               const response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);

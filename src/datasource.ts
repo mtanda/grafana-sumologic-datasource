@@ -2,10 +2,8 @@ import _ from 'lodash';
 import dateMath from 'grafana/app/core/utils/datemath';
 import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
-import { Observable } from 'rxjs';
-import 'rxjs/add/observable/combineLatest';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/scan';
+import { combineLatest } from 'rxjs';
+import { scan, map } from 'rxjs/operators';
 
 export class SumologicDatasource {
   type: string;
@@ -103,81 +101,85 @@ export class SumologicDatasource {
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQueryObservable(params, target.format).scan((acc: any, one: any) => {
-          acc.fields = one.fields;
-          if (one.records) {
-            acc.records = (acc.records || []).concat(one.records);
-          } else if (one.messages) {
-            acc.messages = (acc.messages || []).concat(one.messages);
-          }
-          return acc;
-        }, {});
+        return this.logQueryObservable(params, target.format).pipe(
+          scan((acc: any, one: any) => {
+            acc.fields = one.fields;
+            if (one.records) {
+              acc.records = (acc.records || []).concat(one.records);
+            } else if (one.messages) {
+              acc.messages = (acc.messages || []).concat(one.messages);
+            }
+            return acc;
+          }, {})
+        );
       })
       .value();
-    return Observable.combineLatest(queries).map((responses: any) => {
-      responses = responses.filter(r => {
-        return !_.isEmpty(r);
-      });
-
-      if (this.hasAdhocFilter()) {
-        this.fieldIndex = {
-          tagKeys: new Set(),
-          tagValues: {},
-        };
-
-        // build fieldIndex
-        responses.forEach(r => {
-          r.fields
-            .map(f => {
-              return f.name;
-            })
-            .filter(name => {
-              return !this.excludeFieldList.includes(name);
-            })
-            .forEach(name => {
-              this.fieldIndex.tagKeys.add(name);
-            });
+    return combineLatest(queries).pipe(
+      map((responses: any) => {
+        responses = responses.filter(r => {
+          return !_.isEmpty(r);
         });
 
-        responses.forEach(r => {
-          (r.records || r.messages).forEach(d => {
-            Object.keys(d.map)
-              .filter(tagKey => {
-                return !this.excludeFieldList.includes(tagKey);
+        if (this.hasAdhocFilter()) {
+          this.fieldIndex = {
+            tagKeys: new Set(),
+            tagValues: {},
+          };
+
+          // build fieldIndex
+          responses.forEach(r => {
+            r.fields
+              .map(f => {
+                return f.name;
               })
-              .forEach(tagKey => {
-                if (!this.fieldIndex.tagValues[tagKey]) {
-                  this.fieldIndex.tagValues[tagKey] = new Set();
-                }
-                this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+              .filter(name => {
+                return !this.excludeFieldList.includes(name);
+              })
+              .forEach(name => {
+                this.fieldIndex.tagKeys.add(name);
               });
           });
-        });
-      }
 
-      const tableResponses = _.chain(responses)
-        .filter((response, index) => {
-          return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-        })
-        .flatten()
-        .value();
+          responses.forEach(r => {
+            (r.records || r.messages).forEach(d => {
+              Object.keys(d.map)
+                .filter(tagKey => {
+                  return !this.excludeFieldList.includes(tagKey);
+                })
+                .forEach(tagKey => {
+                  if (!this.fieldIndex.tagValues[tagKey]) {
+                    this.fieldIndex.tagValues[tagKey] = new Set();
+                  }
+                  this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                });
+            });
+          });
+        }
 
-      if (tableResponses.length > 0) {
-        return { data: [self.transformDataToTable(tableResponses)], range: options.range };
-      } else {
-        return {
-          data: _.flatten(
-            responses.map((response, index) => {
-              if (options.targets[index].format === 'time_series_records') {
-                return self.transformRecordsToTimeSeries(response, options.targets[index], options.intervalMs, options.range.to.valueOf());
-              }
-              return response;
-            })
-          ),
-          range: options.range,
-        };
-      }
-    });
+        const tableResponses = _.chain(responses)
+          .filter((response, index) => {
+            return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+          })
+          .flatten()
+          .value();
+
+        if (tableResponses.length > 0) {
+          return { data: [self.transformDataToTable(tableResponses)], range: options.range };
+        } else {
+          return {
+            data: _.flatten(
+              responses.map((response, index) => {
+                if (options.targets[index].format === 'time_series_records') {
+                  return self.transformRecordsToTimeSeries(response, options.targets[index], options.intervalMs, options.range.to.valueOf());
+                }
+                return response;
+              })
+            ),
+            range: options.range,
+          };
+        }
+      })
+    );
   }
 
   async metricFindQuery(query) {
