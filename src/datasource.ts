@@ -71,7 +71,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
   query(options: DataQueryRequest<SumologicQuery>, observer: DataStreamObserver): Promise<{ data: any }> {
     const self = this;
-    const queries = _.chain(options.targets)
+    options.targets
       .filter(target => {
         return !target.hide && !!target.query;
       })
@@ -104,101 +104,78 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQueryObservable(params, target.format).pipe(
-          scan((acc: any, one: any) => {
-            acc.fields = one.fields;
-            if (one.records) {
-              acc.records = (acc.records || []).concat(one.records);
-            } else if (one.messages) {
-              acc.messages = (acc.messages || []).concat(one.messages);
-            }
-            return acc;
-          }, {})
-        );
-      })
-      .value();
+        return this.logQueryObservable(params, target.format)
+          .pipe(
+            scan((acc: any, one: any) => {
+              acc.fields = one.fields;
+              if (one.records) {
+                acc.records = (acc.records || []).concat(one.records);
+              } else if (one.messages) {
+                acc.messages = (acc.messages || []).concat(one.messages);
+              }
+              acc.done = !!one.done;
+              return acc;
+            }, {}),
+            map((response: any) => {
+              if (this.hasAdhocFilter()) {
+                this.fieldIndex = {
+                  tagKeys: new Set(),
+                  tagValues: {},
+                };
 
-    queries[0]
-      .pipe(
-        map((responses: any) => {
-          responses = [responses];
-          responses = responses.filter(r => {
-            return !_.isEmpty(r);
-          });
-
-          if (this.hasAdhocFilter()) {
-            this.fieldIndex = {
-              tagKeys: new Set(),
-              tagValues: {},
-            };
-
-            // build fieldIndex
-            responses.forEach(r => {
-              r.fields
-                .map(f => {
-                  return f.name;
-                })
-                .filter(name => {
-                  return !this.excludeFieldList.includes(name);
-                })
-                .forEach(name => {
-                  this.fieldIndex.tagKeys.add(name);
-                });
-            });
-
-            responses.forEach(r => {
-              (r.records || r.messages).forEach(d => {
-                Object.keys(d.map)
-                  .filter(tagKey => {
-                    return !this.excludeFieldList.includes(tagKey);
+                // build fieldIndex
+                response.fields
+                  .map(f => {
+                    return f.name;
                   })
-                  .forEach(tagKey => {
-                    if (!this.fieldIndex.tagValues[tagKey]) {
-                      this.fieldIndex.tagValues[tagKey] = new Set();
-                    }
-                    this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                  .filter(name => {
+                    return !this.excludeFieldList.includes(name);
+                  })
+                  .forEach(name => {
+                    this.fieldIndex.tagKeys.add(name);
                   });
-              });
-            });
-          }
 
-          const tableResponses = _.chain(responses)
-            .filter((response, index) => {
-              return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+                (response.records || response.messages).forEach(d => {
+                  Object.keys(d.map)
+                    .filter(tagKey => {
+                      return !this.excludeFieldList.includes(tagKey);
+                    })
+                    .forEach(tagKey => {
+                      if (!this.fieldIndex.tagValues[tagKey]) {
+                        this.fieldIndex.tagValues[tagKey] = new Set();
+                      }
+                      this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                    });
+                });
+              }
+
+              if (target.format === 'records' || target.format === 'messages') {
+                return {
+                  key: `sumologic-${target.refId}`,
+                  state: response.done ? LoadingState.Loading : LoadingState.Done,
+                  request: options,
+                  data: [self.transformDataToTable(response)],
+                  //range: options.range
+                  unsubscribe: () => undefined,
+                };
+              } else {
+                return {
+                  key: `sumologic-${target.refId}`,
+                  state: response.done ? LoadingState.Loading : LoadingState.Done,
+                  request: options,
+                  data:
+                    target.format === 'time_series_records'
+                      ? self.transformRecordsToTimeSeries(response, target, options.intervalMs, options.range.to.valueOf())
+                      : response,
+                  //range: options.range,
+                  unsubscribe: () => undefined,
+                };
+              }
             })
-            .flatten()
-            .value();
-
-          if (tableResponses.length > 0) {
-            return {
-              key: `sumologic-table`,
-              state: LoadingState.Done,
-              request: options,
-              data: [self.transformDataToTable(tableResponses)],
-              //range: options.range
-              unsubscribe: () => undefined,
-            };
-          } else {
-            return {
-              key: `sumologic-time-series`,
-              state: LoadingState.Done,
-              request: options,
-              data: _.flatten(
-                responses.map((response, index) => {
-                  if (options.targets[index].format === 'time_series_records') {
-                    return self.transformRecordsToTimeSeries(response, options.targets[index], options.intervalMs, options.range.to.valueOf());
-                  }
-                  return response;
-                })
-              ),
-              //range: options.range,
-              unsubscribe: () => undefined,
-            };
-          }
-        })
-      )
-      .subscribe({
-        next: state => observer(state),
+          )
+          .subscribe({
+            next: state => observer(state),
+          });
       });
 
     return this.$q.when({ data: [] }) as Promise<{ data: any }>;

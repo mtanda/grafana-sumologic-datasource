@@ -247,6 +247,7 @@ export class SumologicQuerier {
                 } catch (e) {
                   // ignore error
                 }
+                response.data.done = true;
                 return observer.next(response.data);
               }
               observer.next(response.data);
