@@ -2,15 +2,17 @@ import _ from 'lodash';
 import dateMath from 'grafana/app/core/utils/datemath';
 import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
-import { combineLatest } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
+import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataStreamObserver, MetricFindValue } from '@grafana/ui';
+import { LoadingState, toDataFrame } from '@grafana/data';
+import { SumologicQuery, SumologicOptions } from './types';
 
-export class SumologicDatasource {
+export default class SumologicDatasource extends DataSourceApi<SumologicQuery, SumologicOptions> {
   type: string;
   name: string;
-  url: string;
-  basicAuth: boolean;
-  withCredentials: boolean;
+  url: any;
+  basicAuth: any;
+  withCredentials: any;
   timeoutSec: number;
   $q: any;
   backendSrv: any;
@@ -23,7 +25,8 @@ export class SumologicDatasource {
   excludeFieldList: any;
 
   /** @ngInject */
-  constructor(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
+  constructor(instanceSettings: DataSourceInstanceSettings<SumologicOptions>, $q, backendSrv, templateSrv, timeSrv) {
+    super(instanceSettings);
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
     this.url = instanceSettings.url;
@@ -35,7 +38,7 @@ export class SumologicDatasource {
     this.templateSrv = templateSrv;
     this.timeSrv = timeSrv;
     this.fieldIndex = {
-      tagKeys: new Set(),
+      tagKeys: new Set<string>(),
       tagValues: {},
     };
     // Rate limiting, https://help.sumologic.com/APIs/Search-Job-API/About-the-Search-Job-API
@@ -66,13 +69,13 @@ export class SumologicDatasource {
     }
   }
 
-  async query(options) {
+  query(options: DataQueryRequest<SumologicQuery>, observer: DataStreamObserver): Promise<{ data: any }> {
     const self = this;
     const queries = _.chain(options.targets)
       .filter(target => {
-        return !target.hide && target.query;
+        return !target.hide && !!target.query;
       })
-      .map((target: any) => {
+      .map(target => {
         const params = {
           query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
           from: this.convertTime(options.range.from, false),
@@ -114,72 +117,91 @@ export class SumologicDatasource {
         );
       })
       .value();
-    return combineLatest(queries).pipe(
-      map((responses: any) => {
-        responses = responses.filter(r => {
-          return !_.isEmpty(r);
-        });
 
-        if (this.hasAdhocFilter()) {
-          this.fieldIndex = {
-            tagKeys: new Set(),
-            tagValues: {},
-          };
-
-          // build fieldIndex
-          responses.forEach(r => {
-            r.fields
-              .map(f => {
-                return f.name;
-              })
-              .filter(name => {
-                return !this.excludeFieldList.includes(name);
-              })
-              .forEach(name => {
-                this.fieldIndex.tagKeys.add(name);
-              });
+    queries[0]
+      .pipe(
+        map((responses: any) => {
+          responses = [responses];
+          responses = responses.filter(r => {
+            return !_.isEmpty(r);
           });
 
-          responses.forEach(r => {
-            (r.records || r.messages).forEach(d => {
-              Object.keys(d.map)
-                .filter(tagKey => {
-                  return !this.excludeFieldList.includes(tagKey);
+          if (this.hasAdhocFilter()) {
+            this.fieldIndex = {
+              tagKeys: new Set(),
+              tagValues: {},
+            };
+
+            // build fieldIndex
+            responses.forEach(r => {
+              r.fields
+                .map(f => {
+                  return f.name;
                 })
-                .forEach(tagKey => {
-                  if (!this.fieldIndex.tagValues[tagKey]) {
-                    this.fieldIndex.tagValues[tagKey] = new Set();
-                  }
-                  this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                .filter(name => {
+                  return !this.excludeFieldList.includes(name);
+                })
+                .forEach(name => {
+                  this.fieldIndex.tagKeys.add(name);
                 });
             });
-          });
-        }
 
-        const tableResponses = _.chain(responses)
-          .filter((response, index) => {
-            return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
-          })
-          .flatten()
-          .value();
+            responses.forEach(r => {
+              (r.records || r.messages).forEach(d => {
+                Object.keys(d.map)
+                  .filter(tagKey => {
+                    return !this.excludeFieldList.includes(tagKey);
+                  })
+                  .forEach(tagKey => {
+                    if (!this.fieldIndex.tagValues[tagKey]) {
+                      this.fieldIndex.tagValues[tagKey] = new Set();
+                    }
+                    this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                  });
+              });
+            });
+          }
 
-        if (tableResponses.length > 0) {
-          return { data: [self.transformDataToTable(tableResponses)], range: options.range };
-        } else {
-          return {
-            data: _.flatten(
-              responses.map((response, index) => {
-                if (options.targets[index].format === 'time_series_records') {
-                  return self.transformRecordsToTimeSeries(response, options.targets[index], options.intervalMs, options.range.to.valueOf());
-                }
-                return response;
-              })
-            ),
-            range: options.range,
-          };
-        }
-      })
-    );
+          const tableResponses = _.chain(responses)
+            .filter((response, index) => {
+              return options.targets[index].format === 'records' || options.targets[index].format === 'messages';
+            })
+            .flatten()
+            .value();
+
+          if (tableResponses.length > 0) {
+            return {
+              key: `sumologic-table`,
+              state: LoadingState.Done,
+              request: options,
+              data: [self.transformDataToTable(tableResponses)],
+              //range: options.range
+              unsubscribe: () => undefined,
+            };
+          } else {
+            return {
+              key: `sumologic-time-series`,
+              state: LoadingState.Done,
+              request: options,
+              data: _.flatten(
+                responses.map((response, index) => {
+                  if (options.targets[index].format === 'time_series_records') {
+                    return self.transformRecordsToTimeSeries(response, options.targets[index], options.intervalMs, options.range.to.valueOf());
+                  }
+                  return response;
+                })
+              ),
+              //range: options.range,
+              unsubscribe: () => undefined,
+            };
+          }
+        })
+      )
+      .subscribe({
+        next: state => observer(state),
+      });
+
+    return this.$q.when({ data: [] }) as Promise<{ data: any }>;
   }
 
   async metricFindQuery(query) {
@@ -318,7 +340,7 @@ export class SumologicDatasource {
     let records = response.records;
 
     if (records.length === 0) {
-      return { target: metricLabel, datapoints: dps };
+      return toDataFrame({ target: metricLabel, datapoints: dps });
     }
 
     let keyField = fields.find(f => {
@@ -336,7 +358,7 @@ export class SumologicDatasource {
     const timeSeries = [] as object[];
 
     if (valueFields.length === 0) {
-      return { target: metricLabel, datapoints: dps };
+      return toDataFrame({ target: metricLabel, datapoints: dps });
     }
 
     records = records.sort((a, b) => {
@@ -366,7 +388,7 @@ export class SumologicDatasource {
       });
 
       _.each(result, (v, k) => {
-        timeSeries.push({ target: k, datapoints: v });
+        timeSeries.push(toDataFrame({ target: k, datapoints: v }));
       });
     });
     return timeSeries;
@@ -415,25 +437,21 @@ export class SumologicDatasource {
     });
   }
 
-  getTagKeys(options) {
-    return Promise.resolve(
-      Array.from(this.fieldIndex.tagKeys).map(k => {
-        return {
-          type: 'key',
-          text: k,
-        };
-      })
-    );
+  getTagKeys(options: any = {}): Promise<MetricFindValue[]> {
+    const keys = Array.from(this.fieldIndex.tagKeys).map((k: string) => {
+      return {
+        text: k,
+      };
+    });
+    return Promise.resolve(keys);
   }
 
-  getTagValues(options) {
-    return Promise.resolve(
-      Array.from(this.fieldIndex.tagValues[options.key]).map(v => {
-        return {
-          type: 'value',
-          text: v,
-        };
-      })
-    );
+  getTagValues(options: any = {}): Promise<MetricFindValue[]> {
+    const values = Array.from(this.fieldIndex.tagValues[options.key]).map((v: string) => {
+      return {
+        text: v,
+      };
+    });
+    return Promise.resolve(values);
   }
 }
