@@ -276,20 +276,8 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
   transformDataToTable(data) {
     const table = new TableModel();
-
-    if (data.length === 0) {
-      return toDataFrame(table);
-    }
-
-    const type = data[0].records ? 'records' : 'messages';
-
-    const fields = _.chain(data)
-      .map(d => {
-        return _.map(d.fields, 'name');
-      })
-      .flatten()
-      .uniq()
-      .value();
+    const type = data.records ? 'records' : 'messages';
+    const fields = _.uniq(_.map(data.fields, 'name'));
 
     // columns
     table.columns = fields.map(c => {
@@ -297,15 +285,13 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     });
 
     // rows
-    data.forEach(d => {
-      for (const r of d[type]) {
-        const row: any[] = [];
-        for (const key of fields) {
-          row.push(r.map[key] || '');
-        }
-        table.rows.push(row);
+    for (const r of data[type]) {
+      const row: any[] = [];
+      for (const key of fields) {
+        row.push(r.map[key] || '');
       }
-    });
+      table.rows.push(row);
+    }
 
     return toDataFrame(table);
   }
