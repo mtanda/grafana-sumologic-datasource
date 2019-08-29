@@ -37,7 +37,7 @@ angular.module('grafana.controllers').controller('SumologicQueryParameterCtrl', 
   };
 
   $scope.getDefaultFormat = () => {
-    if (this.panelType === 'table') {
+    if ($scope.panelType === 'table') {
       return 'records';
     }
     return 'time_series_records';
