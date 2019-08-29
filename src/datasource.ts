@@ -301,7 +301,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     const table = new TableModel();
 
     if (data.length === 0) {
-      return table;
+      return toDataFrame(table);
     }
 
     const type = data[0].records ? 'records' : 'messages';
@@ -330,7 +330,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
       }
     });
 
-    return table;
+    return toDataFrame(table);
   }
 
   transformRecordsToTimeSeries(response, target, intervalMs, defaultValue) {
