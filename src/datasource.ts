@@ -2,8 +2,9 @@ import _ from 'lodash';
 import dateMath from 'grafana/app/core/utils/datemath';
 import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
+import { Observable, from } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
-import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataStreamObserver, MetricFindValue } from '@grafana/ui';
+import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/ui';
 import { LoadingState, toDataFrame } from '@grafana/data';
 import { SumologicQuery, SumologicOptions } from './types';
 
@@ -69,7 +70,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     }
   }
 
-  query(options: DataQueryRequest<SumologicQuery>, observer: DataStreamObserver): Promise<{ data: any }> {
+  query(options: DataQueryRequest<SumologicQuery>): Observable<DataQueryResponse> {
     const self = this;
     options.targets
       .filter(target => {
@@ -104,81 +105,77 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
             params.query = params.query.replace(/\|/, filterQuery + ' |');
           }
         }
-        return this.logQueryObservable(params, target.format)
-          .pipe(
-            scan((acc: any, one: any) => {
-              acc.fields = one.fields;
-              if (one.records) {
-                acc.records = (acc.records || []).concat(one.records);
-              } else if (one.messages) {
-                acc.messages = (acc.messages || []).concat(one.messages);
-              }
-              acc.done = !!one.done;
-              return acc;
-            }, {}),
-            map((response: any) => {
-              if (this.hasAdhocFilter()) {
-                this.fieldIndex = {
-                  tagKeys: new Set(),
-                  tagValues: {},
-                };
+        return this.logQueryObservable(params, target.format).pipe(
+          scan((acc: any, one: any) => {
+            acc.fields = one.fields;
+            if (one.records) {
+              acc.records = (acc.records || []).concat(one.records);
+            } else if (one.messages) {
+              acc.messages = (acc.messages || []).concat(one.messages);
+            }
+            acc.done = !!one.done;
+            return acc;
+          }, {}),
+          map((response: any) => {
+            if (this.hasAdhocFilter()) {
+              this.fieldIndex = {
+                tagKeys: new Set(),
+                tagValues: {},
+              };
 
-                // build fieldIndex
-                response.fields
-                  .map(f => {
-                    return f.name;
-                  })
-                  .filter(name => {
-                    return !this.excludeFieldList.includes(name);
-                  })
-                  .forEach(name => {
-                    this.fieldIndex.tagKeys.add(name);
-                  });
-
-                (response.records || response.messages).forEach(d => {
-                  Object.keys(d.map)
-                    .filter(tagKey => {
-                      return !this.excludeFieldList.includes(tagKey);
-                    })
-                    .forEach(tagKey => {
-                      if (!this.fieldIndex.tagValues[tagKey]) {
-                        this.fieldIndex.tagValues[tagKey] = new Set();
-                      }
-                      this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
-                    });
+              // build fieldIndex
+              response.fields
+                .map(f => {
+                  return f.name;
+                })
+                .filter(name => {
+                  return !this.excludeFieldList.includes(name);
+                })
+                .forEach(name => {
+                  this.fieldIndex.tagKeys.add(name);
                 });
-              }
 
-              if (target.format === 'records' || target.format === 'messages') {
-                return {
-                  key: `sumologic-${target.refId}`,
-                  state: response.done ? LoadingState.Loading : LoadingState.Done,
-                  request: options,
-                  data: [self.transformDataToTable(response)],
-                  //range: options.range
-                  unsubscribe: () => undefined,
-                };
-              } else {
-                return {
-                  key: `sumologic-${target.refId}`,
-                  state: response.done ? LoadingState.Loading : LoadingState.Done,
-                  request: options,
-                  data:
-                    target.format === 'time_series_records'
-                      ? self.transformRecordsToTimeSeries(response, target, options.intervalMs, options.range.to.valueOf())
-                      : response,
-                  //range: options.range,
-                  unsubscribe: () => undefined,
-                };
-              }
-            })
-          )
-          .subscribe({
-            next: state => observer(state),
-          });
+              (response.records || response.messages).forEach(d => {
+                Object.keys(d.map)
+                  .filter(tagKey => {
+                    return !this.excludeFieldList.includes(tagKey);
+                  })
+                  .forEach(tagKey => {
+                    if (!this.fieldIndex.tagValues[tagKey]) {
+                      this.fieldIndex.tagValues[tagKey] = new Set();
+                    }
+                    this.fieldIndex.tagValues[tagKey].add(d.map[tagKey]);
+                  });
+              });
+            }
+
+            if (target.format === 'records' || target.format === 'messages') {
+              return {
+                key: `sumologic-${target.refId}`,
+                state: response.done ? LoadingState.Loading : LoadingState.Done,
+                request: options,
+                data: [self.transformDataToTable(response)],
+                //range: options.range
+                unsubscribe: () => undefined,
+              };
+            } else {
+              return {
+                key: `sumologic-${target.refId}`,
+                state: response.done ? LoadingState.Loading : LoadingState.Done,
+                request: options,
+                data:
+                  target.format === 'time_series_records'
+                    ? self.transformRecordsToTimeSeries(response, target, options.intervalMs, options.range.to.valueOf())
+                    : response,
+                //range: options.range,
+                unsubscribe: () => undefined,
+              };
+            }
+          })
+        );
       });
 
-    return this.$q.when({ data: [] }) as Promise<{ data: any }>;
+    return from([{ data: [], key: 'foo' }]);
   }
 
   async metricFindQuery(query) {
