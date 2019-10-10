@@ -21,7 +21,12 @@ export class SumologicQueryCtrl extends QueryCtrl {
     }
 
     if (!$scope.onChange) {
-      $scope.onChange = () => {};
+      $scope.onChange = () => {
+        // call explore query editor onQueryChange()
+        if (this.panelCtrl.onQueryChange) {
+          this.panelCtrl.onQueryChange();
+        }
+      };
     }
   }
 
