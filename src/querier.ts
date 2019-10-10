@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Observable, EMPTY } from 'rxjs';
+import { Observable } from 'rxjs';
 
 export class SumologicQuerier {
   params: any;
@@ -236,7 +236,12 @@ export class SumologicQuerier {
           for (i = 0; i < 6; i++) {
             const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
             if (limit === 0) {
-              return EMPTY;
+              observer.next({
+                fields: [],
+                records: [],
+                done: true,
+              });
+              return;
             }
             try {
               const response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
