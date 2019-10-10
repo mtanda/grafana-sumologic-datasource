@@ -2,7 +2,7 @@ import { QueryCtrl } from 'grafana/app/plugins/sdk';
 import _ from 'lodash';
 
 export class SumologicQueryCtrl extends QueryCtrl {
-  static templateUrl = 'partials/query.editor.html';
+  static templateUrl = 'query.editor.html';
   formats: any;
 
   /** @ngInject */
