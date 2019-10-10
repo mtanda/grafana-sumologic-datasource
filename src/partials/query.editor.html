@@ -1,3 +1,26 @@
 <query-editor-row query-ctrl="ctrl" can-collapse="false">
-	<sumologic-query-parameter target="ctrl.target" datasource="ctrl.datasource" panel-type="ctrl.panelCtrl.panel.type" is-last-query="ctrl.isLastQuery" on-change="ctrl.refresh()"></sumologic-query-parameter>
+	<div class="gf-form-inline">
+		<div class="gf-form gf-form--grow">
+			<input type="text" class="gf-form-input" ng-model="ctrl.target.query" spellcheck='false' data-min-length=0
+				data-items=1000 ng-model-onblur ng-change="onChange()">
+			</input>
+		</div>
+	</div>
+
+	<div class="gf-form-inline">
+		<div class="gf-form">
+			<label class="gf-form-label width-6">Format as</label>
+			<div class="gf-form-select-wrapper width-13">
+				<select class="gf-form-input gf-size-auto" ng-model="ctrl.target.format"
+					ng-options="f.value as f.text for f in formats" ng-change="onChange()"></select>
+			</div>
+		</div>
+
+		<div class="gf-form max-width-30">
+			<label class="gf-form-label width-7">Alias format</label>
+			<input type="text" class="gf-form-input" ng-model="ctrl.target.aliasFormat" spellcheck='false'
+				placeholder="alias format" data-min-length=0 data-items=1000 ng-model-onblur ng-change="onChange()">
+			</input>
+		</div>
+	</div>
 </query-editor-row>
