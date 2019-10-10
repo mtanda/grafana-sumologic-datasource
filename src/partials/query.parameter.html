@@ -1,7 +1,8 @@
 <div class="gf-form-inline">
 	<div class="gf-form gf-form--grow">
-		<code-editor content="target.query" datasource="datasource" on-change="onChange()" data-mode="sumologic" code-editor-focus="isLastQuery">
-		</code-editor>
+		<input type="text" class="gf-form-input" ng-model="target.query" spellcheck='false' data-min-length=0
+			data-items=1000 ng-model-onblur ng-change="onChange()">
+		</input>
 	</div>
 </div>
 

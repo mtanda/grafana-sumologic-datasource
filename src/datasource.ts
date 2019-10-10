@@ -2,7 +2,7 @@ import _ from 'lodash';
 import dateMath from 'grafana/app/core/utils/datemath';
 import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
-import { Observable, from } from 'rxjs';
+import { Observable, merge } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
 import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/ui';
 import { LoadingState, toDataFrame } from '@grafana/data';
@@ -72,7 +72,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
   query(options: DataQueryRequest<SumologicQuery>): Observable<DataQueryResponse> {
     const self = this;
-    options.targets
+    const subQueries = options.targets
       .filter(target => {
         return !target.hide && !!target.query;
       })
@@ -152,7 +152,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
             if (target.format === 'records' || target.format === 'messages') {
               return {
                 key: `sumologic-${target.refId}`,
-                state: response.done ? LoadingState.Loading : LoadingState.Done,
+                state: response.done ? LoadingState.Done : LoadingState.Loading,
                 request: options,
                 data: [self.transformDataToTable(response)],
                 //range: options.range
@@ -161,7 +161,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
             } else {
               return {
                 key: `sumologic-${target.refId}`,
-                state: response.done ? LoadingState.Loading : LoadingState.Done,
+                state: response.done ? LoadingState.Done : LoadingState.Loading,
                 request: options,
                 data:
                   target.format === 'time_series_records'
@@ -175,7 +175,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
         );
       });
 
-    return from([{ data: [], key: 'foo' }]);
+    return merge(...subQueries);
   }
 
   async metricFindQuery(query) {
@@ -294,13 +294,14 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
   }
 
   transformRecordsToTimeSeries(response, target, intervalMs, defaultValue) {
+    const timeSeries = [] as object[];
+
     let metricLabel = '';
-    const dps = [];
     const fields = response.fields;
     let records = response.records;
 
     if (records.length === 0) {
-      return toDataFrame({ target: metricLabel, datapoints: dps });
+      return timeSeries;
     }
 
     let keyField = fields.find(f => {
@@ -315,10 +316,8 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
       }
     });
 
-    const timeSeries = [] as object[];
-
     if (valueFields.length === 0) {
-      return toDataFrame({ target: metricLabel, datapoints: dps });
+      return timeSeries;
     }
 
     records = records.sort((a, b) => {
