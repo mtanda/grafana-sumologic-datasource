@@ -248,7 +248,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
   async testDatasource() {
     const params = {
-      query: '| count _sourceCategory',
+      query: '_index=sumologic_volume',
       from: new Date().getTime() - 10 * 60 * 1000,
       to: new Date().getTime(),
       timeZone: 'Etc/UTC',
