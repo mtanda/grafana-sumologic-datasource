@@ -2,7 +2,7 @@ import _ from 'lodash';
 import dateMath from 'grafana/app/core/utils/datemath';
 import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
-import { Observable, merge } from 'rxjs';
+import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
 import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/ui';
 import { LoadingState, toDataFrame } from '@grafana/data';
@@ -74,7 +74,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     const self = this;
     const subQueries = options.targets
       .filter(target => {
-        return !target.hide && !!target.query;
+        return !target.hide && !!target.query && target.query.length > 0;
       })
       .map(target => {
         const params = {
@@ -174,6 +174,12 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
           })
         );
       });
+    if (subQueries.length === 0) {
+      return of({
+        data: [],
+        state: LoadingState.Done,
+      });
+    }
 
     return merge(...subQueries);
   }
