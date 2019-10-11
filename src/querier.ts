@@ -131,6 +131,11 @@ export class SumologicQuerier {
           for (i = 0; i < this.loadRetryCount; i++) {
             const limit = Math.min(this.maximumLimit, this.status.data[`${format}Count`] - this.offset);
             if (limit === 0) {
+              try {
+                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+              } catch (e) {
+                // ignore error
+              }
               observer.next({
                 fields: [],
                 records: [],
@@ -148,10 +153,10 @@ export class SumologicQuerier {
                   // ignore error
                 }
                 response.data.done = true;
-                return observer.next(response.data);
+                observer.next(response.data);
+                return;
               }
               observer.next(response.data);
-              break;
             } catch (err) {
               if (err.data && err.data.code && err.data.code === 'searchjob.jobid.invalid') {
                 await this.delay(this.calculateRetryWait(1000, i));
