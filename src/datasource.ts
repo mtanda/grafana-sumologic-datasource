@@ -267,9 +267,34 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     }
   }
 
-  async logQuery(params, format) {
-    const querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
-    return await querier.getResult();
+  async logQuery(params, format): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
+      return querier
+        .getResultObservable()
+        .pipe(
+          scan((acc: any, one: any) => {
+            acc.fields = one.fields;
+            if (one.records) {
+              acc.records = (acc.records || []).concat(one.records);
+            } else if (one.messages) {
+              acc.messages = (acc.messages || []).concat(one.messages);
+            }
+            acc.done = !!one.done;
+            return acc;
+          }, {})
+        )
+        .subscribe(
+          value => {
+            if (value.done) {
+              resolve(value);
+            }
+          },
+          error => {
+            reject(error);
+          }
+        );
+    });
   }
 
   logQueryObservable(params, format) {
