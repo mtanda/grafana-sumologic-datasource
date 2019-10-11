@@ -141,6 +141,7 @@ export class SumologicQuerier {
                 records: [],
                 done: true,
               });
+              observer.complete();
               return;
             }
             try {
@@ -154,6 +155,7 @@ export class SumologicQuerier {
                 }
                 response.data.done = true;
                 observer.next(response.data);
+                observer.complete();
                 return;
               }
               observer.next(response.data);
