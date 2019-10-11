@@ -16,7 +16,7 @@ export class SumologicQueryCtrl extends QueryCtrl {
       { text: 'Records', value: 'records' },
       { text: 'Messages', value: 'messages' },
     ];
-    if (!_.includes(_.map(this.formats, 'value'), this.target.format)) {
+    if (!_.includes(_.map($scope.formats, 'value'), this.target.format)) {
       this.target.format = this.getDefaultFormat();
     }
 
