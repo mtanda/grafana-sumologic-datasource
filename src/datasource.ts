@@ -152,7 +152,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
             if (target.format === 'records' || target.format === 'messages') {
               return {
                 key: `sumologic-${target.refId}`,
-                state: response.done ? LoadingState.Done : LoadingState.Loading,
+                state: response.done ? LoadingState.Done : LoadingState.Streaming,
                 request: options,
                 data: [self.transformDataToTable(response)],
                 //range: options.range
@@ -161,7 +161,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
             } else {
               return {
                 key: `sumologic-${target.refId}`,
-                state: response.done ? LoadingState.Done : LoadingState.Loading,
+                state: response.done ? LoadingState.Done : LoadingState.Streaming,
                 request: options,
                 data:
                   target.format === 'time_series_records'
