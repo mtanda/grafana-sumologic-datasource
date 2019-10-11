@@ -9,6 +9,9 @@ export class SumologicQuerier {
   backendSrv: any;
   offset: number;
   maximumOffset: number;
+  maximumLimit: number;
+  retryCount: number;
+  loadRetryCount: number;
   messageCount: number;
   recordCount: number;
   status: any;
@@ -22,6 +25,9 @@ export class SumologicQuerier {
     this.backendSrv = backendSrv;
     this.offset = 0;
     this.maximumOffset = 10000;
+    this.maximumLimit = 10000;
+    this.retryCount = 6;
+    this.loadRetryCount = 100;
     this.messageCount = 0;
     this.recordCount = 0;
   }
@@ -41,7 +47,7 @@ export class SumologicQuerier {
         await this.delay(Math.random() * 1000);
         let i;
         let job;
-        for (i = 0; i < 6; i++) {
+        for (i = 0; i < this.retryCount; i++) {
           try {
             job = await this.doRequest('POST', '/v1/search/jobs', this.params);
           } catch (err) {
@@ -53,7 +59,7 @@ export class SumologicQuerier {
           await this.delay(this.calculateRetryWait(1000, i));
           continue;
         }
-        if (i === 6) {
+        if (i === this.retryCount) {
           throw { job_id: job.data.id, message: 'max retries exceeded' };
         }
 
@@ -66,7 +72,7 @@ export class SumologicQuerier {
           }
 
           let i;
-          for (i = 0; i < 6; i++) {
+          for (i = 0; i < this.retryCount; i++) {
             try {
               this.status = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}`);
               const prevMessageCount = this.messageCount;
@@ -117,13 +123,13 @@ export class SumologicQuerier {
               }
             }
           }
-          if (i === 6) {
+          if (i === this.retryCount) {
             this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { job_id: job.data.id, message: 'max retries exceeded' };
           }
 
-          for (i = 0; i < 6; i++) {
-            const limit = Math.min(this.maximumOffset, this.status.data[`${format}Count`]) - this.offset;
+          for (i = 0; i < this.loadRetryCount; i++) {
+            const limit = Math.min(this.maximumLimit, this.status.data[`${format}Count`] - this.offset);
             if (limit === 0) {
               observer.next({
                 fields: [],
@@ -157,7 +163,7 @@ export class SumologicQuerier {
               }
             }
           }
-          if (i === 6) {
+          if (i === this.loadRetryCount) {
             this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
             throw { job_id: job.data.id, message: 'max retries exceeded' };
           }
