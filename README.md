@@ -9,15 +9,21 @@ To install the beta version, copy the `dist` directory of this repository to the
 
 To install the plugin on a Mac, with Grafana installed using Homebrew:
 
-`cp -r dist /usr/local/var/lib/grafana/plugins/grafana-sumologic-datasource && brew services restart grafana`
+```
+grafana-cli --pluginUrl https://github.com/mtanda/grafana-sumologic-datasource/releases/download/1.0.6/grafana-sumologic-datasource-1.0.6.zip plugins install mtanda-sumologic-datasource
+brew services restart grafana
+```
 
 #### Install on Ubuntu Linux
 
 To install the plugin on Ubuntu Linux:
 
-`sudo cp -r dist /path_to_plugins/grafana-sumologic-datasource && sudo /bin/systemctl restart grafana-server`
+```
+sudo grafana-cli --pluginUrl https://github.com/mtanda/grafana-sumologic-datasource/releases/download/1.0.6/grafana-sumologic-datasource-1.0.6.zip plugins install mtanda-sumologic-datasource
+sudo /bin/systemctl restart grafana-server
+```
 
-Where `path_to_plugins`  is the path to the plugins folder in your Grafana environment. The plugins folder is typically `/var/lib/grafana/`, but it may be different in your environment. 
+Where `path_to_plugins`  is the path to the plugins folder in your Grafana environment. The plugins folder is typically `/var/lib/grafana/`, but it may be different in your environment.
 
 ### Setup
 This plugin use [Search Job API](https://help.sumologic.com/APIs/Search-Job-API).
