@@ -40,6 +40,9 @@ export class SumologicQuerier {
         if (this.format === 'time_series_records') {
           format = 'record';
         }
+        if (this.format === 'logs') {
+          format = 'message';
+        }
         if (!['record', 'message'].includes(format)) {
           throw { message: 'unsupported type' };
         }
@@ -104,7 +107,7 @@ export class SumologicQuerier {
               if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
                 break;
               }
-              if (this.format === 'messages' && this.messageCount > prevMessageCount) {
+              if ((this.format === 'logs' || this.format === 'messages') && this.messageCount > prevMessageCount) {
                 break;
               }
 

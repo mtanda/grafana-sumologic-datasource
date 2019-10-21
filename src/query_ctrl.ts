@@ -15,6 +15,7 @@ export class SumologicQueryCtrl extends QueryCtrl {
       { text: 'Time series (Records)', value: 'time_series_records' },
       { text: 'Records', value: 'records' },
       { text: 'Messages', value: 'messages' },
+      { text: 'Logs', value: 'logs' },
     ];
     if (!_.includes(_.map($scope.formats, 'value'), this.target.format)) {
       this.target.format = this.getDefaultFormat();
@@ -33,6 +34,9 @@ export class SumologicQueryCtrl extends QueryCtrl {
   getDefaultFormat() {
     if (this.panelCtrl.panel.type === 'table') {
       return 'records';
+    }
+    if (this.panelCtrl.panel.type === 'logs') {
+      return 'logs';
     }
     return 'time_series_records';
   }

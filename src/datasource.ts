@@ -5,7 +5,7 @@ import { SumologicQuerier } from './querier';
 import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
 import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/ui';
-import { LoadingState, toDataFrame } from '@grafana/data';
+import { LoadingState, toDataFrame, FieldType, MutableDataFrame } from '@grafana/data';
 import { SumologicQuery, SumologicOptions } from './types';
 
 export default class SumologicDatasource extends DataSourceApi<SumologicQuery, SumologicOptions> {
@@ -155,6 +155,15 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
                 state: response.done ? LoadingState.Done : LoadingState.Streaming,
                 request: options,
                 data: [self.transformDataToTable(response)],
+                //range: options.range
+                unsubscribe: () => undefined,
+              };
+            } else if (target.format === 'logs') {
+              return {
+                key: `sumologic-${target.refId}`,
+                state: response.done ? LoadingState.Done : LoadingState.Streaming,
+                request: options,
+                data: [self.transformDataToLogs(response)],
                 //range: options.range
                 unsubscribe: () => undefined,
               };
@@ -322,6 +331,57 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     }
 
     return toDataFrame(table);
+  }
+
+  transformDataToLogs(data) {
+    const series = new MutableDataFrame({ fields: [] });
+
+    const metaFields = [
+      '_messagetime',
+      '_raw',
+      '_receipttime',
+      '_blockid',
+      '_collector',
+      '_collectorid',
+      '_format',
+      '_messagecount',
+      '_messageid',
+      '_size',
+      '_source',
+      '_sourcecategory',
+      '_sourcehost',
+      '_sourceid',
+      '_sourcename',
+      '_view',
+    ];
+    const fields = _.uniq(_.map(data.fields, 'name'))
+      .filter(f => !metaFields.includes(f))
+      .sort();
+    const allFields = fields.concat(metaFields);
+
+    allFields.forEach(f => {
+      if (f === '_messagetime' || f === '_receipttime') {
+        series.addField({
+          name: f,
+          type: FieldType.time,
+        }).parse = (v: any) => {
+          return new Date(parseInt(v, 10)).toISOString();
+        };
+      } else {
+        series.addField({
+          name: f,
+          type: FieldType.string,
+        }).parse = (v: any) => {
+          return v || '';
+        };
+      }
+    });
+
+    for (const r of data.messages) {
+      series.add(r.map);
+    }
+
+    return series;
   }
 
   transformRecordsToTimeSeries(response, target, intervalMs, defaultValue) {
