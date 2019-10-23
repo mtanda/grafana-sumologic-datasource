@@ -378,6 +378,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
     for (const r of data.messages) {
       series.add(r.map);
+      series.labels = r.map;
     }
 
     return series;
