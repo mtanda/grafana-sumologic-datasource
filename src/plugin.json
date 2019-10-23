@@ -23,12 +23,12 @@
     ],
     "screenshots": [
     ],
-    "version": "1.0.7",
-    "updated": "2019-10-21"
+    "version": "1.0.8",
+    "updated": "2019-10-23"
   },
 
   "dependencies": {
-    "grafanaVersion": "3.x.x",
+    "grafanaVersion": "6.x.x",
     "plugins": [ ]
   }
 }
