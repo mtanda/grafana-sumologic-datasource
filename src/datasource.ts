@@ -56,7 +56,6 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
       '_receipttime',
       '_size',
       '_timeslice',
-      'processing_time_ms',
     ];
   }
 
