@@ -2,9 +2,9 @@ import _ from 'lodash';
 import React from 'react';
 
 import { SlatePrism } from '@grafana/ui';
+import { Editor } from '@grafana/slate-react';
 
 // dom also includes Element polyfills
-import QueryField from 'app/features/explore/QueryField';
 import { ExploreQueryFieldProps } from '@grafana/ui';
 import SumologicDatasource from '../datasource';
 import { SumologicQuery, SumologicOptions } from '../types';
@@ -12,7 +12,6 @@ import { SumologicQuery, SumologicOptions } from '../types';
 export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> { }
 
 interface State {
-  syntaxLoaded: boolean;
 }
 
 export class SumologicQueryField extends React.PureComponent<Props, State> {
@@ -22,19 +21,14 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     super(props, context);
 
     this.plugins = [
-      SlatePrism({
-        onlyIn: (node: any) => node.type === 'code_block',
-        getSyntax: (node: any) => 'lucene',
-      }),
     ];
 
     this.state = {
-      syntaxLoaded: false,
     };
   }
 
   componentDidMount() {
-    if (!this.props.query.isLogsQuery) {
+    if (!this.props.query.format === 'logs') {
       this.onChangeQuery('', true);
     }
   }
@@ -43,7 +37,7 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
 
   componentDidUpdate(prevProps: Props) {
     // if query changed from the outside (i.e. cleared via explore toolbar)
-    if (!this.props.query.isLogsQuery) {
+    if (!this.props.query.format === 'logs') {
       this.onChangeQuery('', true);
     }
   }
@@ -52,7 +46,7 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     // Send text change to parent
     const { query, onChange, onRunQuery } = this.props;
     if (onChange) {
-      const nextQuery: ElasticsearchQuery = { ...query, query: value, isLogsQuery: true };
+      const nextQuery: SumologicQuery = { ...query, query: value, format: 'logs' };
       onChange(nextQuery);
 
       if (override && onRunQuery) {
@@ -63,20 +57,18 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
 
   render() {
     const { data, query } = this.props;
-    const { syntaxLoaded } = this.state;
 
     return (
       <>
         <div className="gf-form-inline gf-form-inline--nowrap">
           <div className="gf-form gf-form--grow flex-shrink-1">
-            <QueryField
-              additionalPlugins={this.plugins}
-              initialQuery={query.query}
+            <Editor
+              autoCorrect={false}
               onChange={this.onChangeQuery}
-              onRunQuery={this.props.onRunQuery}
-              placeholder="Enter a Lucene query"
-              portalOrigin="elasticsearch"
-              syntaxLoaded={syntaxLoaded}
+              placeholder="Enter a query"
+              plugins={this.plugins}
+              spellCheck={false}
+              value={query.query}
             />
           </div>
         </div>
