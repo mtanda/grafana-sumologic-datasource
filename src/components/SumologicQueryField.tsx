@@ -78,17 +78,9 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
 
   render() {
     return (
-      <>
-        <div className="gf-form-inline gf-form-inline--nowrap">
-          <div className="gf-form gf-form--grow flex-shrink-1">
-            <Editor
-              onChange={this.onChangeQuery}
-              onKeyDown={this.onKeyDown}
-              value={this.state.value}
-            />
-          </div>
-        </div>
-      </>
+      <div className="slate-query-field">
+        <Editor onChange={this.onChangeQuery} onKeyDown={this.onKeyDown} value={this.state.value} />
+      </div>
     );
   }
 }
