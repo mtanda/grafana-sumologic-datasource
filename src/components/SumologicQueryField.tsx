@@ -1,35 +1,87 @@
+import _ from 'lodash';
 import React from 'react';
-import { ExploreQueryFieldProps } from '@grafana/ui';
-// @ts-ignore
-import Cascader from 'rc-cascader';
 
+import { SlatePrism } from '@grafana/ui';
+
+// dom also includes Element polyfills
+import QueryField from 'app/features/explore/QueryField';
+import { ExploreQueryFieldProps } from '@grafana/ui';
 import SumologicDatasource from '../datasource';
 import { SumologicQuery, SumologicOptions } from '../types';
 
-export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> {}
+export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> { }
 
-export interface State {
-  field: string;
+interface State {
+  syntaxLoaded: boolean;
 }
 
 export class SumologicQueryField extends React.PureComponent<Props, State> {
-  state: State = { field: '' };
+  plugins: any[];
 
-  async componentDidMount() {
-    //const { datasource } = this.props;
-    this.setState({});
+  constructor(props: Props, context: React.Context<any>) {
+    super(props, context);
+
+    this.plugins = [
+      SlatePrism({
+        onlyIn: (node: any) => node.type === 'code_block',
+        getSyntax: (node: any) => 'lucene',
+      }),
+    ];
+
+    this.state = {
+      syntaxLoaded: false,
+    };
   }
 
-  componentDidUpdate(prevProps: Props) {}
+  componentDidMount() {
+    if (!this.props.query.isLogsQuery) {
+      this.onChangeQuery('', true);
+    }
+  }
+
+  componentWillUnmount() { }
+
+  componentDidUpdate(prevProps: Props) {
+    // if query changed from the outside (i.e. cleared via explore toolbar)
+    if (!this.props.query.isLogsQuery) {
+      this.onChangeQuery('', true);
+    }
+  }
+
+  onChangeQuery = (value: string, override?: boolean) => {
+    // Send text change to parent
+    const { query, onChange, onRunQuery } = this.props;
+    if (onChange) {
+      const nextQuery: ElasticsearchQuery = { ...query, query: value, isLogsQuery: true };
+      onChange(nextQuery);
+
+      if (override && onRunQuery) {
+        onRunQuery();
+      }
+    }
+  };
 
   render() {
-    //const { datasource } = this.props;
+    const { data, query } = this.props;
+    const { syntaxLoaded } = this.state;
 
     return (
-      <div className="gf-form-inline gf-form-inline--nowrap">
-        <div className="gf-form flex-shrink-0"></div>
-        <div className="flex-shrink-1 flex-flow-column-nowrap"></div>
-      </div>
+      <>
+        <div className="gf-form-inline gf-form-inline--nowrap">
+          <div className="gf-form gf-form--grow flex-shrink-1">
+            <QueryField
+              additionalPlugins={this.plugins}
+              initialQuery={query.query}
+              onChange={this.onChangeQuery}
+              onRunQuery={this.props.onRunQuery}
+              placeholder="Enter a Lucene query"
+              portalOrigin="elasticsearch"
+              syntaxLoaded={syntaxLoaded}
+            />
+          </div>
+        </div>
+        {data && data.error ? <div className="prom-query-field-info text-error"> data.error.message}</div> : null}
+      </>
     );
   }
 }
