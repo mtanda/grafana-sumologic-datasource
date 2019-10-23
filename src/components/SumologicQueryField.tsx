@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React from 'react';
 
 import { Editor } from '@grafana/slate-react';
-import { Block, Document, Text, Value } from 'slate';
+import { Block, Document, Text, Value, Editor as CoreEditor } from 'slate';
 
 // dom also includes Element polyfills
 import { ExploreQueryFieldProps } from '@grafana/ui';
@@ -12,8 +12,8 @@ import { SumologicQuery, SumologicOptions } from '../types';
 export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> { }
 
 interface State {
+  value: Value;
 }
-
 
 export const makeFragment = (text: string) => {
   const lines = text.split('\n').map((line: any) =>
@@ -37,8 +37,7 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
   constructor(props: Props, context: React.Context<any>) {
     super(props, context);
 
-    this.plugins = [
-    ];
+    this.plugins = [];
 
     this.state = {
       value: getInitialValue(''),
@@ -73,19 +72,18 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     }
   };
 
-  render() {
-    const { query } = this.props;
+  onKeyDown = (event: Event, editor: CoreEditor, next: Function) => {
+    return next();
+  };
 
+  render() {
     return (
       <>
         <div className="gf-form-inline gf-form-inline--nowrap">
           <div className="gf-form gf-form--grow flex-shrink-1">
             <Editor
-              autoCorrect={false}
               onChange={this.onChangeQuery}
-              placeholder="Enter a query"
-              plugins={this.plugins}
-              spellCheck={false}
+              onKeyDown={this.onKeyDown}
               value={this.state.value}
             />
           </div>
