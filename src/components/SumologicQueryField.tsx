@@ -9,7 +9,7 @@ import { ExploreQueryFieldProps } from '@grafana/ui';
 import SumologicDatasource from '../datasource';
 import { SumologicQuery, SumologicOptions } from '../types';
 
-export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> { }
+export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> {}
 
 interface State {
   value: Value;
@@ -50,7 +50,7 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     //}
   }
 
-  componentWillUnmount() { }
+  componentWillUnmount() {}
 
   componentDidUpdate(prevProps: Props) {
     // if query changed from the outside (i.e. cleared via explore toolbar)
