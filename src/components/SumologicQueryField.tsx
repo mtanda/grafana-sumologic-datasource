@@ -11,7 +11,7 @@ import { ExploreQueryFieldProps } from '@grafana/ui';
 import SumologicDatasource from '../datasource';
 import { SumologicQuery, SumologicOptions } from '../types';
 
-export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> { }
+export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> {}
 
 interface State {
   value: Value;
@@ -19,6 +19,7 @@ interface State {
 
 export class SumologicQueryField extends React.PureComponent<Props, State> {
   plugins: any[];
+  mounted: boolean;
   editor: Editor;
 
   constructor(props: Props, context: React.Context<any>) {
@@ -32,12 +33,15 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
   }
 
   componentDidMount() {
+    this.mounted = true;
     //if (!this.props.query.format === 'logs') {
     //  this.onChangeQuery('', true);
     //}
   }
 
-  componentWillUnmount() { }
+  componentWillUnmount() {
+    this.mounted = false;
+  }
 
   componentDidUpdate(prevProps: Props) {
     // if query changed from the outside (i.e. cleared via explore toolbar)
