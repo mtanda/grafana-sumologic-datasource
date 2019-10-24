@@ -9,7 +9,7 @@ import { ExploreQueryFieldProps } from '@grafana/ui';
 import SumologicDatasource from '../datasource';
 import { SumologicQuery, SumologicOptions } from '../types';
 
-export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> {}
+export interface Props extends ExploreQueryFieldProps<SumologicDatasource, SumologicQuery, SumologicOptions> { }
 
 interface State {
   value: Value;
@@ -50,7 +50,7 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     //}
   }
 
-  componentWillUnmount() {}
+  componentWillUnmount() { }
 
   componentDidUpdate(prevProps: Props) {
     // if query changed from the outside (i.e. cleared via explore toolbar)
@@ -78,8 +78,17 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
 
   render() {
     return (
-      <div className="slate-query-field">
-        <Editor onChange={this.onChangeQuery} onKeyDown={this.onKeyDown} value={this.state.value} />
+      <div className="gf-form-inline gf-form-inline--nowrap">
+        <div className="gf-form gf-form--grow flex-shrink-1">
+          <Editor
+            autoCorrect={false}
+            onChange={this.onChangeQuery}
+            onKeyDown={this.onKeyDown}
+            placeholder="Enter a query"
+            plugins={this.plugins}
+            spellCheck={false}
+            value={this.state.value} />
+        </div>
       </div>
     );
   }
