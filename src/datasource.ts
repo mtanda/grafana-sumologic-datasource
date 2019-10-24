@@ -24,6 +24,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
   token: number;
   tokenTimer: any;
   excludeFieldList: any;
+  metaFields: any;
 
   /** @ngInject */
   constructor(instanceSettings: DataSourceInstanceSettings<SumologicOptions>, $q, backendSrv, templateSrv, timeSrv) {
@@ -56,6 +57,24 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
       '_receipttime',
       '_size',
       '_timeslice',
+    ];
+    this.metaFields = [
+      '_messagetime',
+      '_raw',
+      '_receipttime',
+      '_blockid',
+      '_collector',
+      '_collectorid',
+      '_format',
+      '_messagecount',
+      '_messageid',
+      '_size',
+      '_source',
+      '_sourcecategory',
+      '_sourcehost',
+      '_sourceid',
+      '_sourcename',
+      '_view',
     ];
   }
 
@@ -313,17 +332,20 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
   transformDataToTable(data) {
     const table = new TableModel();
     const type = data.records ? 'records' : 'messages';
-    const fields = _.uniq(_.map(data.fields, 'name'));
+    const fields = _.uniq(_.map(data.fields, 'name'))
+      .filter(f => !this.metaFields.includes(f))
+      .sort();
+    const allFields = fields.concat(this.metaFields);
 
     // columns
-    table.columns = fields.map(c => {
+    table.columns = allFields.map(c => {
       return { text: c, filterable: true };
     });
 
     // rows
     for (const r of data[type]) {
       const row: any[] = [];
-      for (const key of fields) {
+      for (const key of allFields) {
         row.push(r.map[key] || '');
       }
       table.rows.push(row);
@@ -335,28 +357,10 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
   transformDataToLogs(data) {
     const series = new MutableDataFrame({ fields: [] });
 
-    const metaFields = [
-      '_messagetime',
-      '_raw',
-      '_receipttime',
-      '_blockid',
-      '_collector',
-      '_collectorid',
-      '_format',
-      '_messagecount',
-      '_messageid',
-      '_size',
-      '_source',
-      '_sourcecategory',
-      '_sourcehost',
-      '_sourceid',
-      '_sourcename',
-      '_view',
-    ];
     const fields = _.uniq(_.map(data.fields, 'name'))
-      .filter(f => !metaFields.includes(f))
+      .filter(f => !this.metaFields.includes(f))
       .sort();
-    const allFields = fields.concat(metaFields);
+    const allFields = fields.concat(this.metaFields);
 
     allFields.forEach(f => {
       if (f === '_messagetime' || f === '_receipttime') {
