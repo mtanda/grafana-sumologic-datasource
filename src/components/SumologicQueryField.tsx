@@ -2,7 +2,9 @@ import _ from 'lodash';
 import React from 'react';
 
 import { Editor } from '@grafana/slate-react';
-import { Block, Document, Text, Value, Editor as CoreEditor } from 'slate';
+import { Value, Editor as CoreEditor } from 'slate';
+import { makeValue } from '@grafana/ui';
+import classnames from 'classnames';
 
 // dom also includes Element polyfills
 import { ExploreQueryFieldProps } from '@grafana/ui';
@@ -15,24 +17,9 @@ interface State {
   value: Value;
 }
 
-export const makeFragment = (text: string) => {
-  const lines = text.split('\n').map((line: any) =>
-    Block.create({
-      type: 'paragraph',
-      nodes: [Text.create(line)],
-    } as any)
-  );
-
-  const fragment = Document.create({
-    nodes: lines,
-  });
-  return fragment;
-};
-
-export const getInitialValue = (query: string) => Value.create({ document: makeFragment(query) });
-
 export class SumologicQueryField extends React.PureComponent<Props, State> {
   plugins: any[];
+  editor: Editor;
 
   constructor(props: Props, context: React.Context<any>) {
     super(props, context);
@@ -40,7 +27,7 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     this.plugins = [];
 
     this.state = {
-      value: getInitialValue(''),
+      value: makeValue(props.query.query || ''),
     };
   }
 
@@ -77,17 +64,23 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
   };
 
   render() {
+    const wrapperClassName = classnames('slate-query-field__wrapper', {
+      'slate-query-field__wrapper--disabled': false,
+    });
     return (
-      <div className="gf-form-inline gf-form-inline--nowrap">
-        <div className="gf-form gf-form--grow flex-shrink-1">
+      <div className={wrapperClassName}>
+        <div className="slate-query-field">
           <Editor
+            ref={editor => (this.editor = editor)}
             autoCorrect={false}
+            readOnly={false}
             onChange={this.onChangeQuery}
             onKeyDown={this.onKeyDown}
             placeholder="Enter a query"
             plugins={this.plugins}
             spellCheck={false}
-            value={this.state.value} />
+            value={this.state.value}
+          />
         </div>
       </div>
     );
