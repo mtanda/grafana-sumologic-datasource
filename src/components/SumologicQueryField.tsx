@@ -50,6 +50,11 @@ export class SumologicQueryField extends React.PureComponent<Props, State> {
     //}
   }
 
+  UNSAFE_componentWillReceiveProps(nextProps: Props) {
+    const editor = this.editor.insertText(' ').deleteBackward(1);
+    this.onChangeQuery(editor.value, true);
+  }
+
   onChangeQuery = (value: string, override?: boolean) => {
     // Send text change to parent
     const { query, onChange, onRunQuery } = this.props;
