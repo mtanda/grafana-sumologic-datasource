@@ -43,7 +43,7 @@ Basic Auth | Check this to specify Access Keys.
 Basic Auth Details | Specify created Access Keys.
 Whitelisted Cookies | To bypass Sumo Logic cookie to SumoLogic, please set "JSESSIONID,AWSELB"
 
-![](https://raw.githubusercontent.com/mtanda/grafana-sumologic-datasource/master/dist/images/config.png)
+![](https://raw.githubusercontent.com/mtanda/grafana-sumologic-datasource/master/src/images/config.png)
 
 To use without saving Access Keys in Grafana backend, you need to disable datasource Basic Auth, and Grafana itself Basic Auth in ini file.
 When accessing datasoure proxy, auth dialog is appeared, input Access Keys, you can call API without saving Access Keys.
