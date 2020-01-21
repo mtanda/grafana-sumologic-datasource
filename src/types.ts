@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData } from '@grafana/ui';
+import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
 export interface SumologicOptions extends DataSourceJsonData {
   timeout: number;
@@ -7,7 +7,7 @@ export interface SumologicOptions extends DataSourceJsonData {
 export interface SumologicQuery extends DataQuery {
   refId: string;
   format?: 'records' | 'messages' | 'time_series_records' | 'logs';
-  query?: string;
+  query: string;
   aliasFormat?: string;
   hide?: boolean;
 }

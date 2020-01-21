@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { ExploreStartPageProps } from '@grafana/ui';
+import { ExploreStartPageProps } from '@grafana/data';
 
 export default class SumologicStartPage extends PureComponent<ExploreStartPageProps> {
   render() {

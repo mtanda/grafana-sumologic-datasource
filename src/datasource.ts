@@ -4,7 +4,7 @@ import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
 import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
-import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/ui';
+import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/data';
 import { LoadingState, toDataFrame, FieldType, MutableDataFrame } from '@grafana/data';
 import { SumologicQuery, SumologicOptions } from './types';
 
@@ -367,6 +367,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
         series.addField({
           name: f,
           type: FieldType.time,
+          //labels: r.map,
         }).parse = (v: any) => {
           return new Date(parseInt(v, 10)).toISOString();
         };
@@ -374,6 +375,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
         series.addField({
           name: f,
           type: FieldType.string,
+          //labels: r.map,
         }).parse = (v: any) => {
           return v || '';
         };
@@ -382,7 +384,6 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
     for (const r of data.messages) {
       series.add(r.map);
-      series.labels = r.map;
     }
 
     return series;
