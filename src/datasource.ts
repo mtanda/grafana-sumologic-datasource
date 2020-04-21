@@ -471,7 +471,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
     return query
       .split('\n')
       .map(q => {
-        return q.replace(/(\/\*([\s\S]*?)\*\/)|(\/\/(.*)$)/gm, '');
+        return q.replace(/(\/\*([\s\S]*?)\*\/)/gm, '').replace(/([^:])(\/\/(.*)$)/gm, '$1');
       })
       .filter(q => {
         return q !== '';
