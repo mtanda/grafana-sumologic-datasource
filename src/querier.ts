@@ -191,11 +191,13 @@ export class SumologicQuerier {
     const options: any = {
       method: method,
       url: this.datasource.url + path,
-      data: params,
       headers: {},
       inspect: { type: 'sumologic' },
       withCredentials: false,
     };
+    if (!_.isEmpty(params)) {
+      options.data = params;
+    }
 
     if (this.datasource.basicAuth || this.datasource.withCredentials) {
       options.withCredentials = true;
