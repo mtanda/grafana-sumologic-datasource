@@ -10,7 +10,7 @@
   "author": "Mitsuhiro Tanda",
   "license": "Apache",
   "dependencies": {
-    "angular": "1.7.9",
+    "angular": "1.8.0",
     "lodash": "^4.17.15",
     "moment": "^2.22.1",
     "rxjs": "^6.4.0",
