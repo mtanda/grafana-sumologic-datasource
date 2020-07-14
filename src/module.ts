@@ -1,15 +1,14 @@
-import SumologicDatasource from './datasource';
-import { SumologicQueryCtrl } from './query_ctrl';
+import { DataSource } from './datasource';
 import { SumologicAnnotationsQueryCtrl } from './annotations_query_ctrl';
-import { SumologicConfigCtrl } from './config_ctrl';
+import { ConfigEditor, QueryEditor } from './components';
 import SumologicQueryField from './components/SumologicQueryField';
 import SumologicStartPage from './components/SumologicStartPage';
 import { DataSourcePlugin } from '@grafana/data';
 import { SumologicQuery, SumologicOptions } from './types';
 
-export const plugin = new DataSourcePlugin<SumologicDatasource, SumologicQuery, SumologicOptions>(SumologicDatasource)
-  .setConfigCtrl(SumologicConfigCtrl)
-  .setQueryCtrl(SumologicQueryCtrl)
+export const plugin = new DataSourcePlugin<DataSource, SumologicQuery, SumologicOptions>(DataSource)
+  .setConfigEditor(ConfigEditor)
+  .setQueryEditor(QueryEditor)
   .setAnnotationQueryCtrl(SumologicAnnotationsQueryCtrl)
   .setExploreLogsQueryField(SumologicQueryField)
   .setExploreStartPage(SumologicStartPage);

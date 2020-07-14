@@ -14,7 +14,7 @@ import { LoadingState, toDataFrame, FieldType, MutableDataFrame } from '@grafana
 import { getTemplateSrv } from '@grafana/runtime';
 import { SumologicQuery, SumologicOptions, CreateSearchJobRequest } from './types';
 
-export default class SumologicDatasource extends DataSourceApi<SumologicQuery, SumologicOptions> {
+export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> {
   type: string;
   name: string;
   url: any;
