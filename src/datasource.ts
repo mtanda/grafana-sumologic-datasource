@@ -3,10 +3,16 @@ import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
 import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
-import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/data';
+import {
+  DataSourceApi,
+  DataSourceInstanceSettings,
+  DataQueryRequest,
+  DataQueryResponse,
+  MetricFindValue,
+} from '@grafana/data';
 import { LoadingState, toDataFrame, FieldType, MutableDataFrame } from '@grafana/data';
 import { getTemplateSrv } from '@grafana/runtime';
-import { SumologicQuery, SumologicOptions } from './types';
+import { SumologicQuery, SumologicOptions, CreateSearchJobRequest } from './types';
 
 export default class SumologicDatasource extends DataSourceApi<SumologicQuery, SumologicOptions> {
   type: string;
@@ -95,7 +101,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
         return !target.hide && !!target.query && target.query.length > 0;
       })
       .map(target => {
-        const params = {
+        const params: CreateSearchJobRequest = {
           query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
           from: options.range.from.valueOf(),
           to: options.range.to.valueOf(),
@@ -192,7 +198,12 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
                 request: options,
                 data:
                   target.format === 'time_series_records'
-                    ? self.transformRecordsToTimeSeries(response, target, options.intervalMs, options.range.to.valueOf())
+                    ? self.transformRecordsToTimeSeries(
+                        response,
+                        target,
+                        options.intervalMs,
+                        options.range.to.valueOf()
+                      )
                     : response,
                 //range: options.range,
                 unsubscribe: () => undefined,
