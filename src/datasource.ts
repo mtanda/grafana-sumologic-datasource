@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
 import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
@@ -178,7 +177,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
                 key: `sumologic-${target.refId}`,
                 state: response.done ? LoadingState.Done : LoadingState.Streaming,
                 request: options,
-                data: [self.transformDataToTable(response)],
+                data: [self.transformToDataFrame(response)],
                 //range: options.range
                 unsubscribe: () => undefined,
               };
@@ -187,7 +186,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
                 key: `sumologic-${target.refId}`,
                 state: response.done ? LoadingState.Done : LoadingState.Streaming,
                 request: options,
-                data: [self.transformDataToLogs(response)],
+                data: [self.transformToDataFrame(response)],
                 //range: options.range
                 unsubscribe: () => undefined,
               };
@@ -340,32 +339,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
     return querier.getResultObservable();
   }
 
-  transformDataToTable(data) {
-    const table = new TableModel();
-    const type = data.records ? 'records' : 'messages';
-    const fields = _.uniq(_.map(data.fields, 'name'))
-      .filter(f => !this.metaFields.includes(f))
-      .sort();
-    const allFields = fields.concat(this.metaFields);
-
-    // columns
-    table.columns = allFields.map(c => {
-      return { text: c, filterable: true };
-    });
-
-    // rows
-    for (const r of data[type]) {
-      const row: any[] = [];
-      for (const key of allFields) {
-        row.push(r.map[key] || '');
-      }
-      table.rows.push(row);
-    }
-
-    return toDataFrame(table);
-  }
-
-  transformDataToLogs(data) {
+  transformToDataFrame(data) {
     const series = new MutableDataFrame({ fields: [] });
 
     const fields = _.uniq(_.map(data.fields, 'name'))
@@ -393,7 +367,8 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
       }
     });
 
-    for (const r of data.messages) {
+    const type = data.records ? 'records' : 'messages';
+    for (const r of data[type]) {
       series.add(r.map);
     }
 
