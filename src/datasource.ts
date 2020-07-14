@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import dateMath from 'grafana/app/core/utils/datemath';
 import TableModel from 'grafana/app/core/table_model';
 import { SumologicQuerier } from './querier';
 import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
 import { DataSourceApi, DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, MetricFindValue } from '@grafana/data';
 import { LoadingState, toDataFrame, FieldType, MutableDataFrame } from '@grafana/data';
+import { getTemplateSrv } from '@grafana/runtime';
 import { SumologicQuery, SumologicOptions } from './types';
 
 export default class SumologicDatasource extends DataSourceApi<SumologicQuery, SumologicOptions> {
@@ -97,8 +97,8 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
       .map(target => {
         const params = {
           query: this.templateSrv.replace(this.stripComment(target.query), options.scopedVars),
-          from: this.convertTime(options.range.from, false),
-          to: this.convertTime(options.range.to, true),
+          from: options.range.from.valueOf(),
+          to: options.range.to.valueOf(),
           timeZone: 'Etc/UTC',
         };
         const adhocFilters = this.templateSrv.getAdhocFilters(this.name);
@@ -212,7 +212,7 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
   }
 
   async metricFindQuery(query) {
-    const range = this.timeSrv.timeRange();
+    const templateSrv = getTemplateSrv();
 
     const recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
     if (recordValuesQuery) {
@@ -220,8 +220,8 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
       const query = recordValuesQuery[2];
       const params = {
         query: this.templateSrv.replace(this.stripComment(query)),
-        from: String(this.convertTime(range.from, false)),
-        to: String(this.convertTime(range.to, true)),
+        from: parseInt(templateSrv.replace('$__from'), 10),
+        to: parseInt(templateSrv.replace('$__to'), 10),
         timeZone: 'Etc/UTC',
       };
       const result = await this.logQuery(params, 'records');
@@ -251,8 +251,8 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
 
     const params = {
       query: this.templateSrv.replace(this.stripComment(query)),
-      from: String(this.convertTime(options.range.from, false)),
-      to: String(this.convertTime(options.range.to, true)),
+      from: options.range.from.valueOf(),
+      to: options.range.to.valueOf(),
       timeZone: 'Etc/UTC',
     };
     const result = await this.logQuery(params, 'messages');
@@ -477,13 +477,6 @@ export default class SumologicDatasource extends DataSourceApi<SumologicQuery, S
         return q !== '';
       })
       .join('\n');
-  }
-
-  convertTime(date, roundUp) {
-    if (_.isString(date)) {
-      date = dateMath.parse(date, roundUp);
-    }
-    return date.valueOf();
   }
 
   hasAdhocFilter() {
