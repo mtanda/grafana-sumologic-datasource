@@ -1,12 +1,20 @@
 import React, { PureComponent } from 'react';
-import { QueryEditorProps } from '@grafana/data';
-import { InlineFormLabel, QueryField } from '@grafana/ui';
+import { QueryEditorProps, SelectableValue } from '@grafana/data';
+import { InlineFormLabel, QueryField, Select } from '@grafana/ui';
 import { DataSource } from '../datasource';
 import { SumologicQuery, SumologicOptions } from '../types';
 
 type Props = QueryEditorProps<DataSource, SumologicQuery, SumologicOptions>;
 
+const FORMAT_OPTIONS: Array<SelectableValue<string>> = [
+  { label: 'Time series (Records)', value: 'time_series_records' },
+  { label: 'Records', value: 'records' },
+  { label: 'Messages', value: 'messages' },
+  { label: 'Logs', value: 'logs' },
+];
+
 interface State {
+  format: SelectableValue<string>;
   query: string;
   aliasFormat?: string;
 }
@@ -17,16 +25,23 @@ export class QueryEditor extends PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
     const defaultQuery: Partial<SumologicQuery> = {
+      format: 'time_series_records',
       query: '',
       aliasFormat: '',
     };
     const query = Object.assign({}, defaultQuery, props.query);
     this.query = query;
     this.state = {
+      format: FORMAT_OPTIONS.find(option => option.value === query.format) || FORMAT_OPTIONS[0],
       query: query.query,
       aliasFormat: query.aliasFormat,
     };
   }
+
+  onFormatChange = (option: SelectableValue<string>) => {
+    this.query.format = option.value;
+    this.setState({ format: option }, this.onRunQuery);
+  };
 
   onQueryChange = (value: string, override?: boolean) => {
     const { query, onChange, onRunQuery } = this.props;
@@ -61,10 +76,15 @@ export class QueryEditor extends PureComponent<Props, State> {
   };
 
   render() {
-    const { query, aliasFormat } = this.state;
+    const { format, query, aliasFormat } = this.state;
     return (
       <>
         <div className="gf-form-inline gf-form-inline--xs-view-flex-column flex-grow-1">
+          <div className="gf-form">
+            <div className="gf-form-label">Format</div>
+            <Select isSearchable={false} options={FORMAT_OPTIONS} onChange={this.onFormatChange} value={format} />
+          </div>
+
           <div className="gf-form gf-form--grow flex-shrink-1 min-width-15">
             <InlineFormLabel width={8}>Query</InlineFormLabel>
             <QueryField

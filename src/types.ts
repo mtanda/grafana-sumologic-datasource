@@ -6,7 +6,7 @@ export interface SumologicOptions extends DataSourceJsonData {
 
 export interface SumologicQuery extends DataQuery {
   refId: string;
-  format?: 'records' | 'messages' | 'time_series_records' | 'logs';
+  format?: string;
   query: string;
   aliasFormat?: string;
   hide?: boolean;
