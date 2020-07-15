@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { Observable } from 'rxjs';
 import {
   CreateSearchJobRequest,
@@ -90,12 +89,12 @@ export class SumologicQuerier {
               this.messageCount = this.status.data.messageCount;
               this.recordCount = this.status.data.recordCount;
 
-              if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
+              if (this.status.data.pendingErrors.length > 0 || this.status.data.pendingWarnings.length > 0) {
                 let message = '';
-                if (!_.isEmpty(this.status.data.pendingErrors)) {
+                if (this.status.data.pendingErrors.length > 0) {
                   message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
                 }
-                if (!_.isEmpty(this.status.data.pendingWarnings)) {
+                if (this.status.data.pendingWarnings.length > 0) {
                   message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
                 }
                 console.error(message);

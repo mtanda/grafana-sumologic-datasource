@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { SumologicQuerier } from './querier';
 import { Observable, merge, of } from 'rxjs';
 import { scan, map } from 'rxjs/operators';
@@ -235,7 +234,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
         timeZone: 'Etc/UTC',
       };
       const result = await this.logQuery(params, 'records');
-      if (_.isEmpty(result)) {
+      if (!result.records) {
         return [];
       }
       return result.records.map(r => {
@@ -266,16 +265,16 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
       timeZone: 'Etc/UTC',
     };
     const result = await this.logQuery(params, 'messages');
-    if (_.isEmpty(result)) {
+    if (!result.messages) {
       return [];
     }
 
     const eventList = result.messages.map(message => {
-      const tags = _.chain(message.map)
-        .filter((v, k) => {
-          return _.includes(tagKeys, k);
+      const tags = Object.entries(message.map)
+        .filter(e => {
+          return tagKeys.includes(e[0]);
         })
-        .value();
+        .map(e => e[1]);
 
       return {
         annotation: annotation,
@@ -341,10 +340,14 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
 
   transformToDataFrame(data) {
     const series = new MutableDataFrame({ fields: [] });
-
-    const fields = _.uniq(_.map(data.fields, 'name'))
-      .filter(f => !this.metaFields.includes(f))
-      .sort();
+    const fields: string[] = Array.from(
+      new Set(
+        data.fields
+          .map(d => d.name)
+          .filter(f => !this.metaFields.includes(f))
+          .sort()
+      )
+    );
     const allFields = fields.concat(this.metaFields);
 
     allFields.forEach(f => {
@@ -418,7 +421,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
     valueFields.forEach(valueField => {
       const result = {};
       records.forEach(r => {
-        metricLabel = this.createMetricLabel(_.extend(r.map, { field: valueField }), target);
+        metricLabel = this.createMetricLabel(Object.assign(r.map, { field: valueField }), target);
         result[metricLabel] = result[metricLabel] || [];
         const timestamp = parseFloat(r.map[keyField] || defaultValue);
         const len = result[metricLabel].length;
@@ -428,15 +431,15 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
         result[metricLabel].push([parseFloat(r.map[valueField]), timestamp]);
       });
 
-      _.each(result, (v, k) => {
+      for (const [k, v] of Object.entries(result)) {
         timeSeries.push(toDataFrame({ target: k, datapoints: v }));
-      });
+      }
     });
     return timeSeries;
   }
 
   createMetricLabel(record, target) {
-    if (_.isUndefined(target) || _.isEmpty(target.aliasFormat)) {
+    if (target === undefined) {
       return '';
     }
 
@@ -466,7 +469,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
   }
 
   hasAdhocFilter() {
-    return _.some(this.templateSrv.variables, variable => {
+    return this.templateSrv.variables.some(variable => {
       return variable.type === 'adhoc';
     });
   }
