@@ -9,7 +9,7 @@ import {
   MetricFindValue,
 } from '@grafana/data';
 import { LoadingState, toDataFrame, FieldType, MutableDataFrame } from '@grafana/data';
-import { getTemplateSrv } from '@grafana/runtime';
+import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { SumologicQuery, SumologicOptions, CreateSearchJobRequest } from './types';
 
 export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> {
@@ -19,10 +19,8 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
   basicAuth: any;
   withCredentials: any;
   timeoutSec: number;
-  $q: any;
   backendSrv: any;
   templateSrv: any;
-  timeSrv: any;
   fieldIndex: any;
   MAX_AVAILABLE_TOKEN: number;
   token: number;
@@ -30,8 +28,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
   excludeFieldList: any;
   metaFields: any;
 
-  /** @ngInject */
-  constructor(instanceSettings: DataSourceInstanceSettings<SumologicOptions>, $q, backendSrv, templateSrv, timeSrv) {
+  constructor(instanceSettings: DataSourceInstanceSettings<SumologicOptions>) {
     super(instanceSettings);
     this.type = instanceSettings.type;
     this.name = instanceSettings.name;
@@ -39,10 +36,8 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
     this.basicAuth = instanceSettings.basicAuth;
     this.withCredentials = instanceSettings.withCredentials;
     this.timeoutSec = instanceSettings.jsonData.timeout || 180;
-    this.$q = $q;
-    this.backendSrv = backendSrv;
-    this.templateSrv = templateSrv;
-    this.timeSrv = timeSrv;
+    this.backendSrv = getBackendSrv();
+    this.templateSrv = getTemplateSrv();
     this.fieldIndex = {
       tagKeys: new Set<string>(),
       tagValues: {},
@@ -221,16 +216,14 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
   }
 
   async metricFindQuery(query) {
-    const templateSrv = getTemplateSrv();
-
     const recordValuesQuery = query.match(/^record_values\(([^,]+?),\s?([^\)]+?)\)/);
     if (recordValuesQuery) {
       const recordKey = recordValuesQuery[1].toLowerCase();
       const query = recordValuesQuery[2];
       const params = {
         query: this.templateSrv.replace(this.stripComment(query)),
-        from: parseInt(templateSrv.replace('$__from'), 10),
-        to: parseInt(templateSrv.replace('$__to'), 10),
+        from: parseInt(this.templateSrv.replace('$__from'), 10),
+        to: parseInt(this.templateSrv.replace('$__to'), 10),
         timeZone: 'Etc/UTC',
       };
       const result = await this.logQuery(params, 'records');
@@ -305,7 +298,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
 
   async logQuery(params, format): Promise<any> {
     return new Promise((resolve, reject) => {
-      const querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
+      const querier = new SumologicQuerier(params, format, this.timeoutSec, this);
       return querier
         .getResultObservable()
         .pipe(
@@ -334,7 +327,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
   }
 
   logQueryObservable(params, format) {
-    const querier = new SumologicQuerier(params, format, this.timeoutSec, this, this.backendSrv);
+    const querier = new SumologicQuerier(params, format, this.timeoutSec, this);
     return querier.getResultObservable();
   }
 

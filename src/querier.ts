@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { getBackendSrv } from '@grafana/runtime';
 import {
   CreateSearchJobRequest,
   CreateSearchJobResponse,
@@ -22,13 +23,12 @@ export class SumologicQuerier {
   recordCount: number;
   status: any;
 
-  /** @ngInject */
-  constructor(params: CreateSearchJobRequest, format, timeoutSec, datasource, backendSrv) {
+  constructor(params: CreateSearchJobRequest, format, timeoutSec, datasource) {
     this.params = params;
     this.format = format;
     this.timeoutSec = timeoutSec;
     this.datasource = datasource;
-    this.backendSrv = backendSrv;
+    this.backendSrv = getBackendSrv();
     this.offset = 0;
     this.maximumOffset = 10000;
     this.maximumLimit = 10000;
