@@ -56,9 +56,9 @@ export class QueryEditor extends PureComponent<Props, State> {
     }
   };
 
-  onAliasFormatChange = (item: any) => {
+  onAliasFormatChange = (event: React.SyntheticEvent<HTMLInputElement>) => {
     const { query, onChange, onRunQuery } = this.props;
-    const aliasFormat = item.value;
+    const aliasFormat = event.currentTarget.value;
     this.query.aliasFormat = aliasFormat;
     this.setState({ aliasFormat });
     if (onChange) {
