@@ -1,5 +1,12 @@
-import _ from 'lodash';
 import { Observable } from 'rxjs';
+import { getBackendSrv } from '@grafana/runtime';
+import {
+  CreateSearchJobRequest,
+  CreateSearchJobResponse,
+  GetSearchJobStatusResponse,
+  GetResultsResponse,
+  BackendResponse,
+} from './types';
 
 export class SumologicQuerier {
   params: any;
@@ -16,13 +23,12 @@ export class SumologicQuerier {
   recordCount: number;
   status: any;
 
-  /** @ngInject */
-  constructor(params, format, timeoutSec, datasource, backendSrv) {
+  constructor(params: CreateSearchJobRequest, format, timeoutSec, datasource) {
     this.params = params;
     this.format = format;
     this.timeoutSec = timeoutSec;
     this.datasource = datasource;
-    this.backendSrv = backendSrv;
+    this.backendSrv = getBackendSrv();
     this.offset = 0;
     this.maximumOffset = 10000;
     this.maximumLimit = 10000;
@@ -52,7 +58,7 @@ export class SumologicQuerier {
         let job;
         for (i = 0; i < this.retryCount; i++) {
           try {
-            job = await this.doRequest('POST', '/v1/search/jobs', this.params);
+            job = await this.createSearchJob(this.params);
           } catch (err) {
             // ignore error
           }
@@ -70,25 +76,25 @@ export class SumologicQuerier {
           const now = new Date();
           if (now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000) {
             console.error('timeout');
-            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+            this.deleteSearchJob(job.data.id);
             throw { job_id: job.data.id, message: 'timeout' };
           }
 
           let i;
           for (i = 0; i < this.retryCount; i++) {
             try {
-              this.status = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}`);
+              this.status = await this.getSearchJobStatus(job.data.id);
               const prevMessageCount = this.messageCount;
               const prevRecordCount = this.recordCount;
               this.messageCount = this.status.data.messageCount;
               this.recordCount = this.status.data.recordCount;
 
-              if (!_.isEmpty(this.status.data.pendingErrors) || !_.isEmpty(this.status.data.pendingWarnings)) {
+              if (this.status.data.pendingErrors.length > 0 || this.status.data.pendingWarnings.length > 0) {
                 let message = '';
-                if (!_.isEmpty(this.status.data.pendingErrors)) {
+                if (this.status.data.pendingErrors.length > 0) {
                   message += 'Error:\n' + this.status.data.pendingErrors.join('\n') + '\n';
                 }
-                if (!_.isEmpty(this.status.data.pendingWarnings)) {
+                if (this.status.data.pendingWarnings.length > 0) {
                   message += 'Warning:\n' + this.status.data.pendingWarnings.join('\n');
                 }
                 console.error(message);
@@ -104,7 +110,10 @@ export class SumologicQuerier {
                 break;
               }
 
-              if ((this.format === 'time_series_records' || this.format === 'records') && this.recordCount > prevRecordCount) {
+              if (
+                (this.format === 'time_series_records' || this.format === 'records') &&
+                this.recordCount > prevRecordCount
+              ) {
                 break;
               }
               if ((this.format === 'logs' || this.format === 'messages') && this.messageCount > prevMessageCount) {
@@ -120,14 +129,14 @@ export class SumologicQuerier {
                 await this.delay(this.calculateRetryWait(1000, i));
                 continue;
               } else {
-                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                this.deleteSearchJob(job.data.id);
                 console.error(err);
                 throw err;
               }
             }
           }
           if (i === this.retryCount) {
-            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+            this.deleteSearchJob(job.data.id);
             throw { job_id: job.data.id, message: 'max retries exceeded' };
           }
 
@@ -135,7 +144,7 @@ export class SumologicQuerier {
             const limit = Math.min(this.maximumLimit, this.status.data[`${format}Count`] - this.offset);
             if (limit === 0) {
               try {
-                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                this.deleteSearchJob(job.data.id);
               } catch (e) {
                 // ignore error
               }
@@ -148,11 +157,11 @@ export class SumologicQuerier {
               return;
             }
             try {
-              const response = await this.doRequest('GET', `/v1/search/jobs/${job.data.id}/${format}s?offset=${this.offset}&limit=${limit}`);
+              const response = await this.getResults(job.data.id, format, this.offset, limit);
               this.offset += response.data[`${format}s`].length;
               if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
                 try {
-                  this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                  this.deleteSearchJob(job.data.id);
                 } catch (e) {
                   // ignore error
                 }
@@ -167,19 +176,40 @@ export class SumologicQuerier {
                 await this.delay(this.calculateRetryWait(1000, i));
                 continue;
               } else {
-                this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+                this.deleteSearchJob(job.data.id);
                 console.error(err);
                 throw err;
               }
             }
           }
           if (i === this.loadRetryCount) {
-            this.doRequest('DELETE', `/v1/search/jobs/${job.data.id}`);
+            this.deleteSearchJob(job.data.id);
             throw { job_id: job.data.id, message: 'max retries exceeded' };
           }
         }
       })();
     });
+  }
+
+  async createSearchJob(request: CreateSearchJobRequest): Promise<BackendResponse<CreateSearchJobResponse>> {
+    return await this.doRequest('POST', '/v1/search/jobs', request);
+  }
+
+  async getSearchJobStatus(jobId: string): Promise<BackendResponse<GetSearchJobStatusResponse>> {
+    return await this.doRequest('GET', `/v1/search/jobs/${jobId}`);
+  }
+
+  async getResults(
+    jobId: string,
+    format: string,
+    offset: number,
+    limit: number
+  ): Promise<BackendResponse<GetResultsResponse>> {
+    return await this.doRequest('GET', `/v1/search/jobs/${jobId}/${format}s?offset=${this.offset}&limit=${limit}`);
+  }
+
+  async deleteSearchJob(jobId: string) {
+    return await this.doRequest('DELETE', `/v1/search/jobs/${jobId}`);
   }
 
   async doRequest(method, path, params = {}) {
@@ -195,7 +225,7 @@ export class SumologicQuerier {
       inspect: { type: 'sumologic' },
       withCredentials: false,
     };
-    if (!_.isEmpty(params)) {
+    if (method === 'POST') {
       options.data = params;
     }
 
