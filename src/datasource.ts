@@ -462,7 +462,7 @@ export class DataSource extends DataSourceApi<SumologicQuery, SumologicOptions> 
   }
 
   hasAdhocFilter() {
-    return this.templateSrv.variables.some(variable => {
+    return this.templateSrv.getVariables().some(variable => {
       return variable.type === 'adhoc';
     });
   }
