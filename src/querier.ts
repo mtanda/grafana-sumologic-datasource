@@ -81,7 +81,7 @@ export class SumologicQuerier {
         while (!this.isTimmeout(job, startTime) && !isGatheringDone) {
           // get job status
           let i;
-          for (i = 0; i < this.getJobStatusRetryCount; i++) {
+          for (i = 0; !this.isTimmeout(job, startTime) && i < this.getJobStatusRetryCount; i++) {
             try {
               this.status = await this.getSearchJobStatus(job.data.id);
 
