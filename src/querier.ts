@@ -17,6 +17,7 @@ export class SumologicQuerier {
   offset: number;
   maximumOffset: number;
   maximumLimit: number;
+  minimumLimit: number;
   retryCount: number;
   loadRetryCount: number;
   messageCount: number;
@@ -32,6 +33,7 @@ export class SumologicQuerier {
     this.offset = 0;
     this.maximumOffset = 10000;
     this.maximumLimit = 10000;
+    this.minimumLimit = 100;
     this.retryCount = 6;
     this.loadRetryCount = 100;
     this.messageCount = 0;
@@ -40,6 +42,7 @@ export class SumologicQuerier {
 
   getResultObservable() {
     const startTime = new Date();
+    let isGatheringDone = false;
     return new Observable(observer => {
       (async () => {
         let format = this.format.slice(0, -1); // strip last 's'
@@ -53,7 +56,8 @@ export class SumologicQuerier {
           throw { message: 'unsupported type' };
         }
 
-        await this.delay(Math.random() * 1000);
+        // create job
+        await this.delay(Math.random() * 1000); // random wait
         let i;
         let job;
         for (i = 0; i < this.retryCount; i++) {
@@ -72,22 +76,12 @@ export class SumologicQuerier {
           throw { job_id: job.data.id, message: 'max retries exceeded' };
         }
 
-        while (true) {
-          const now = new Date();
-          if (now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000) {
-            console.error('timeout');
-            this.deleteSearchJob(job.data.id);
-            throw { job_id: job.data.id, message: 'timeout' };
-          }
-
+        while (!this.isTimmeout(job, startTime) && !isGatheringDone) {
+          // get job status
           let i;
           for (i = 0; i < this.retryCount; i++) {
             try {
               this.status = await this.getSearchJobStatus(job.data.id);
-              const prevMessageCount = this.messageCount;
-              const prevRecordCount = this.recordCount;
-              this.messageCount = this.status.data.messageCount;
-              this.recordCount = this.status.data.recordCount;
 
               if (this.status.data.pendingErrors.length > 0 || this.status.data.pendingWarnings.length > 0) {
                 let message = '';
@@ -106,17 +100,18 @@ export class SumologicQuerier {
                 }
               }
 
-              if (this.status.data.state === 'DONE GATHERING RESULTS') {
-                break;
-              }
-
-              if (
+              const prevMessageCount = this.messageCount;
+              const prevRecordCount = this.recordCount;
+              this.messageCount = this.status.data.messageCount;
+              this.recordCount = this.status.data.recordCount;
+              isGatheringDone = this.status.data.state === 'DONE GATHERING RESULTS';
+              const enoughRecord =
                 (this.format === 'time_series_records' || this.format === 'records') &&
-                this.recordCount > prevRecordCount
-              ) {
-                break;
-              }
-              if ((this.format === 'logs' || this.format === 'messages') && this.messageCount > prevMessageCount) {
+                this.recordCount - prevRecordCount > this.minimumLimit;
+              const enoughMessage =
+                (this.format === 'logs' || this.format === 'messages') &&
+                this.messageCount - prevMessageCount > this.minimumLimit;
+              if (isGatheringDone || enoughRecord || enoughMessage) {
                 break;
               }
 
@@ -129,8 +124,8 @@ export class SumologicQuerier {
                 await this.delay(this.calculateRetryWait(1000, i));
                 continue;
               } else {
-                this.deleteSearchJob(job.data.id);
                 console.error(err);
+                this.deleteSearchJob(job.data.id);
                 throw err;
               }
             }
@@ -140,26 +135,35 @@ export class SumologicQuerier {
             throw { job_id: job.data.id, message: 'max retries exceeded' };
           }
 
+          // get results
           for (i = 0; i < this.loadRetryCount; i++) {
             const limit = Math.min(this.maximumLimit, this.status.data[`${format}Count`] - this.offset);
             if (limit === 0) {
-              try {
-                this.deleteSearchJob(job.data.id);
-              } catch (e) {
-                // ignore error
+              if (!isGatheringDone) {
+                break; // check status and get remain result
+              } else {
+                try {
+                  this.deleteSearchJob(job.data.id);
+                } catch (e) {
+                  // ignore error
+                }
+                observer.next({
+                  fields: [],
+                  records: [],
+                  done: true,
+                });
+                observer.complete();
+                return;
               }
-              observer.next({
-                fields: [],
-                records: [],
-                done: true,
-              });
-              observer.complete();
-              return;
             }
+
             try {
               const response = await this.getResults(job.data.id, format, this.offset, limit);
               this.offset += response.data[`${format}s`].length;
-              if (this.offset >= Math.min(this.maximumOffset, this.status.data[`${format}Count`])) {
+              if (
+                this.offset >= this.maximumOffset ||
+                (isGatheringDone && this.offset >= this.status.data[`${format}Count`])
+              ) {
                 try {
                   this.deleteSearchJob(job.data.id);
                 } catch (e) {
@@ -176,8 +180,8 @@ export class SumologicQuerier {
                 await this.delay(this.calculateRetryWait(1000, i));
                 continue;
               } else {
-                this.deleteSearchJob(job.data.id);
                 console.error(err);
+                this.deleteSearchJob(job.data.id);
                 throw err;
               }
             }
@@ -285,5 +289,15 @@ export class SumologicQuerier {
 
   calculateRetryWait(initialWait, retryCount) {
     return initialWait * Math.min(10, Math.pow(2, retryCount)) + Math.floor(Math.random() * 1000);
+  }
+
+  isTimmeout(job, startTime) {
+    const now = new Date();
+    if (now.valueOf() - startTime.valueOf() > this.timeoutSec * 1000) {
+      console.error('timeout');
+      this.deleteSearchJob(job.data.id);
+      throw { job_id: job.data.id, message: 'timeout' };
+    }
+    return false;
   }
 }
